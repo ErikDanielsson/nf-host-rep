@@ -54,7 +54,7 @@ process rev_annotate_tree {
 process generate_phyjson {
     label 'data'
 
-    container "${ "params.container_r }"
+    container "${ params.container_r }"
 
     input:
         val genid
@@ -79,7 +79,7 @@ process generate_phyjson {
 process clean_phyjson {
     label 'data'
 
-    container "${ params.container_python" }"
+    container "${ params.container_python }"
 
     input:
         val genid
