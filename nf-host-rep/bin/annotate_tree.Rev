@@ -1,0 +1,7 @@
+#!/usr/bin/env rb
+print(args)
+input_tree_fn = args[1]
+output_tree_fn = args[2]
+input_tree <- readTrees(input_tree_fn)[1]
+write(input_tree, filename = output_tree_fn)
+q()
