@@ -1,7 +1,7 @@
-params.datadir = "test_gen_data"
-
 process generate_trees_and_interactions {
     label 'data'
+
+    container "${ params.container_r }"
 
     input:
         val genid
@@ -31,6 +31,8 @@ process generate_trees_and_interactions {
 process rev_annotate_tree {
     label 'data'
 
+    container "${ params.container_revbayes }"
+
     input:
         val(genid)
         path(input)
@@ -51,6 +53,8 @@ process rev_annotate_tree {
 
 process generate_phyjson {
     label 'data'
+
+    container "${ "params.container_r }"
 
     input:
         val genid
@@ -74,6 +78,8 @@ process generate_phyjson {
 
 process clean_phyjson {
     label 'data'
+
+    container "${ params.container_python" }"
 
     input:
         val genid

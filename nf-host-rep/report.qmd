@@ -132,13 +132,13 @@ else:
 ```{python}
 # | label: fig-trace-tppl-1
 # | fig-cap: "2500 samples from the TPPL implementation with drift param 1"
-#  az.plot_trace(reduced_df_tppl.loc["1.0", "multi_channel"], compact=False)
-# plt.show()
+az.plot_trace(reduced_df_tppl.loc["1.0", "multi_channel"], compact=False)
+plt.show()
 ```
 ### TreePPL trace plot drift=0.1
 ```{python}
 # | label: fig-trace-tppl-2
 # | fig-cap: "2500 samples from the TPPL implementation with drift param 1"
-# az.plot_trace(reduced_df_tppl.loc["0.1", "multi_channel"], compact=False)
-# plt.show()
+az.plot_trace(reduced_df_tppl.loc["0.1", "multi_channel"], compact=False)
+plt.show()
 ```

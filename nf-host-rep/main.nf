@@ -10,7 +10,6 @@ include {
 include {
     compile_model;
     run_hostrep_treeppl;
-    time_hostrep_treeppl
 } from "./modules/treeppl"
 
 include {
