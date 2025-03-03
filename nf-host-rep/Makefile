@@ -1,5 +1,5 @@
 clean:
 	rm -rf work/
-	rm -r .nextflow*
-	rm -r quarto_tempdirs/
-	rm report.html
+	rm -rf .nextflow*
+	rm -rf quarto_tempdirs/
+	rm -f report.html
