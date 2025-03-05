@@ -1,0 +1,10 @@
+rejection_full	-m mcmc-lw-dk --align --cps none --kernel --drift 0.01 --mcmc-lw-gprob 0.0
+rejection_full	-m mcmc-lw-dk --align --cps none --kernel --drift 0.05 --mcmc-lw-gprob 0.0
+rejection_full	-m mcmc-lw-dk --align --cps none --kernel --drift 0.1 --mcmc-lw-gprob 0.0
+rejection_full	-m mcmc-lw-dk --align --cps none --kernel --drift 0.2 --mcmc-lw-gprob 0.0
+rejection_full	-m mcmc-lw-dk --align --cps none --kernel --drift 0.3 --mcmc-lw-gprob 0.0
+rejection_full	-m mcmc-lw-dk --align --cps none --kernel --drift 0.5 --mcmc-lw-gprob 0.0
+rejection_full	-m mcmc-lw-dk --align --cps none --kernel --drift 0.7 --mcmc-lw-gprob 0.0
+rejection_full	-m mcmc-lw-dk --align --cps none --kernel --drift 1.0 --mcmc-lw-gprob 0.0
+rejection_full	-m mcmc-lw-dk --align --cps none --kernel --drift 5.0 --mcmc-lw-gprob 0.0
+rejection_full	-m mcmc-lw-dk --align --cps none --kernel --drift 10.0 --mcmc-lw-gprob 0.0
