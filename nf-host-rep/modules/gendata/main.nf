@@ -28,6 +28,27 @@ process generate_trees_and_interactions {
     """
 }
 
+process generate_phylogenetic_interactions {
+    label 'data'
+    
+    container "${ params.container_revbayes }"
+
+    input:
+        val genid
+        val beta
+        val clock
+        path symbiont_tree_file
+        path host_tree_file
+    
+    output:
+        tuple val(genid)
+
+    script:
+    """
+    echo "Hej"
+    """
+}
+
 process rev_annotate_tree {
     label 'data'
 

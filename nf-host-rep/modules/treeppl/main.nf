@@ -14,7 +14,7 @@ process compile_model {
     script:
     def model_fns = [
         original: "host_rep_original.tppl",                          // Original implementation by Mariana Pires Braga
-        no_weight: "host_rep_no_weight.tppl",                // Will sample from the proposal distribution (independence model with image restriction)
+        no_weight: "host_rep_no_weight.tppl",                        // Will sample from the proposal distribution (independence model with image restriction)
         rejection_simple: "host_rep_rejection_simple.tppl",          // Removes weight 0.0; resample; (SMC specific) in independence model, replaces with rejection sampling
         rejection_full: "host_rep_rejection_full.tppl",              // Adds rejection sampling with checking if parasite has host at all times
         uniformizaton_simple: "host_rep_uniformization_simple.tppl", // TODO: Uniformization along branches, no adjustment for false repertoires
@@ -33,7 +33,7 @@ process compile_model {
     stub:
     def model_fns = [
         original: "host_rep_original.tppl",                          // Original implementation by Mariana Pires Braga
-        no_weight: "host_rep_no_weight.tppl",                // Will sample from the proposal distribution (independence model with image restriction)
+        no_weight: "host_rep_no_weight.tppl",                        // Will sample from the proposal distribution (independence model with image restriction)
         rejection_simple: "host_rep_rejection_simple.tppl",          // Removes weight 0.0; resample; (SMC specific) in independence model, replaces with rejection sampling
         rejection_full: "host_rep_rejection_full.tppl",              // Adds rejection sampling with checking if parasite has host at all times
         uniformizaton_simple: "host_rep_uniformization_simple.tppl", // TODO: Uniformization along branches, no adjustment for false repertoires
