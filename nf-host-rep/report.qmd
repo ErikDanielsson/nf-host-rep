@@ -33,7 +33,7 @@ import pandas as pd
 warnings.filterwarnings(action="ignore", module=r"arviz")
 
 # Set global script options, the rest will follow from these
-RUN_NAME = "test-docker"
+RUN_NAME = "test-drift-scale"
 CACHE = True  # Create a cache of the files to speed up next render?
 CLEAR_CACHE = False  # Clear the cache from a previous render?
 
@@ -128,17 +128,38 @@ if has_rb:
 else:
     print("No RevBayes files found")
 ```
-### TreePPL trace plot drift=1
+### TreePPL trace plot drift=0.1
 ```{python}
 # | label: fig-trace-tppl-1
+# | fig-cap: "2500 samples from the TPPL implementation with drift param 1"
+az.plot_trace(reduced_df_tppl.loc["0.1", "multi_channel"], compact=False)
+plt.show()
+```
+### TreePPL trace plot drift=0.5
+```{python}
+# | label: fig-trace-tppl-2
+# | fig-cap: "2500 samples from the TPPL implementation with drift param 1"
+az.plot_trace(reduced_df_tppl.loc["0.5", "multi_channel"], compact=False)
+plt.show()
+```
+### TreePPL trace plot drift=1.0
+```{python}
+# | label: fig-trace-tppl-3
 # | fig-cap: "2500 samples from the TPPL implementation with drift param 1"
 az.plot_trace(reduced_df_tppl.loc["1.0", "multi_channel"], compact=False)
 plt.show()
 ```
-### TreePPL trace plot drift=0.1
+### TreePPL trace plot drift=5.0
 ```{python}
-# | label: fig-trace-tppl-2
+# | label: fig-trace-tppl-4
 # | fig-cap: "2500 samples from the TPPL implementation with drift param 1"
-az.plot_trace(reduced_df_tppl.loc["0.1", "multi_channel"], compact=False)
+az.plot_trace(reduced_df_tppl.loc["5.0", "multi_channel"], compact=False)
+plt.show()
+```
+### TreePPL trace plot drift=10.0
+```{python}
+# | label: fig-trace-tppl-5
+# | fig-cap: "2500 samples from the TPPL implementation with drift param 1"
+az.plot_trace(reduced_df_tppl.loc["10.0", "multi_channel"], compact=False)
 plt.show()
 ```
