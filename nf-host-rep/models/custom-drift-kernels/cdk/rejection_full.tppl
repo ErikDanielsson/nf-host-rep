@@ -131,9 +131,7 @@ model function mymodel(symbiont_tree: TreeLabeled, ntips: Int, nhosts: Int, inte
 
   // Factor in the net debt of the proposed ancestral repertoires 
   // at nodes and leaves in the historyTree
-  // logWeight( -get_rep_debt(historyTree) );
-
-  weight 1.0;
+  logWeight( -get_rep_debt(historyTree) );
   
   // Return symbiont tree with simulated character history and parameter values
   return ReturnType{tree = historyTree, lambda = lambda, mu = mu, beta = beta};
@@ -315,7 +313,7 @@ function simulate_history (from_rep: HistoryPoint, to_rep: HistoryPoint, mp: Mod
       to_rep.age, mp, proposed_unordered_events.log_debt);
     
     // Now we have both debt and score at an alignment point 
-    // logWeight(history_score.log_score - proposed_unordered_events.log_debt); 
+    logWeight(history_score.log_score - proposed_unordered_events.log_debt); 
 
     return history_score.history;
   } else {

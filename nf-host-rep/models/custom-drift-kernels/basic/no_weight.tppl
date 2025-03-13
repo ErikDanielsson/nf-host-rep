@@ -1,18 +1,10 @@
 /*
- *  Host repertoire model
+ *  Host repertoire model with no likelihood
  *  
- * This file implements the host repertoire model described by Braga et al
- *  2020 (https://doi.org/10.1093/sysbio/syaa019).
+ * This implementation will sample from the proposal distribution
+ * (independence model with image restriction)
  *
- * This version explicitly repays weight associated with proposal
- * 
- * Compile 
- * tpplc host_repertoire.tppl -m smc-apf  
- * 
- * Run
- * ./out treeppl/models/data/hostrep.json 10 1
- */
-
+ */ 
 /*---------------------------- TYPES --------------------------------*/
 
 // TreeLabeled is like the built in Tree type, but with leaf and node labels
@@ -44,7 +36,7 @@ type ProbsTree =
 type Event = Event{age: Real, host: Int, from_state: Int, to_state: Int}
 
 // Type used to hold a proposed history of state changes for a branch
-type ProposedHistory = ProposedHistory{log_debt: Real, events: Event[]}
+type ProposedHistory = ProposedHistory{log_debt: Real, events: Event[], success: Bool}
 
 // History point type used to store repertoire snapshots at the repertoire
 // start ages, which is the time of the event that led to that combination
@@ -138,7 +130,9 @@ model function mymodel(symbiont_tree: TreeLabeled, ntips: Int, nhosts: Int, inte
 
   // Factor in the net debt of the proposed ancestral repertoires 
   // at nodes and leaves in the historyTree
-  logWeight( -get_rep_debt(historyTree) );
+  // logWeight( -get_rep_debt(historyTree) );
+
+  weight 1.0;
   
   // Return symbiont tree with simulated character history and parameter values
   return ReturnType{tree = historyTree, lambda = lambda, mu = mu, beta = beta};
@@ -259,20 +253,14 @@ function final_probs(tree: MsgTree, parent_msg: Tensor[Real][], qMatrix: Tensor[
 // Simulate an evolutionary history for the host repertoires, from root to leaves
 function simulate (tree: ProbsTree, start: HistoryPoint, mp: ModelParams, iMatrix: Tensor[Real]) : HistoryTree {
     
+  let probRecordSequence = sapply(tree.probs, createProbRecord);
+  let repertoire = suggest_repertoire_with_RS(probRecordSequence);
+  let log_rep_debt = seqSumReal(zipWith(categoricalLogScore, repertoire, probRecordSequence)); 
   // Propose a repertoire. The propose mechanism means that the simulation
   // should be "penalized" for the probability associated with the draw. 
   let probs = getProbs(tree);  // TODO: is this needed?
   let probRecordSequence = sapply(tree.probs, createProbRecord);
-  let repertoire = sapply(probRecordSequence, categorical);      // Note: assume is within function categorical
-    
-  let log_rep_debt = seqSumReal(zipWith(categoricalLogScore, repertoire, probRecordSequence)); 
-	// Note: categorical works here because repertoire id 0-based
-  	
-  let valid_rep = any(is2, repertoire);  
-  if !valid_rep { 
-    weight 0.0; 
-    resample;
-  } 
+  
 
 	let stop = HistoryPoint{age = getProbsTreeAge(tree), repertoire = repertoire};
 	let history = simulate_history(start, stop, mp);
@@ -297,6 +285,17 @@ function simulate (tree: ProbsTree, start: HistoryPoint, mp: ModelParams, iMatri
 
 }
 
+// Suggest valid repertoire based on rejection sampling
+function suggest_repertoire_with_RS(probRecordSequence: CategoricalParam[]): Int[] {
+  // Note: categorical works here because repertoire id 0-based
+  let repertoire = sapply(probRecordSequence, categorical);      // Note: assume is within function categorical
+  if any(is2, repertoire) {
+    // The repertoire is valid, return it! 
+    return repertoire;
+  } else {
+    return suggest_repertoire_with_RS(probRecordSequence);
+  }
+}
 
 // Simulate history conditional on initial repertoire, start time, and end
 // time. We first propose events from the independence model and then
@@ -306,14 +305,24 @@ function simulate_history (from_rep: HistoryPoint, to_rep: HistoryPoint, mp: Mod
   let proposed_unordered_events = propose_events(1, from_rep, to_rep, mp.qMatrix);
   // order events by decreasing age
 	let eventSeq = qSort(subAge, proposed_unordered_events.events);
-  // Simulate repertoire evolution from full model, one event at a time
-  let history_score = simulate_by_event(from_rep.repertoire, eventSeq, 1, from_rep.age, 
-    to_rep.age, mp, proposed_unordered_events.log_debt);
-	
-  // Now we have both debt and score at an alignment point 
-  logWeight(history_score.log_score - proposed_unordered_events.log_debt); 
+  // Check if the repertoire has at least one 2 at all time points
+  if all_times_valid_rep(from_rep.repertoire, proposed_unordered_events, eventSeq, 1) {
 
-  return history_score.history;
+    // Simulate repertoire evolution from full model, one event at a time
+    printLn("Valid reperotoire");
+    let history_score = simulate_by_event(from_rep.repertoire, eventSeq, 1, from_rep.age, 
+      to_rep.age, mp, proposed_unordered_events.log_debt);
+    
+    // Now we have both debt and score at an alignment point 
+    // logWeight(history_score.log_score - proposed_unordered_events.log_debt); 
+
+    return history_score.history;
+  } else {
+    // We failed to find a repertoire that satisfied the "one host at all times"
+    // requirement, so we reject the proposal and resample the repertoire
+    printLn("Invalid reperotoire, rejecting");
+    return simulate_history(from_rep, to_rep, mp);
+  }
 }
 
 // Propose events from independence model
@@ -321,17 +330,27 @@ function propose_events (host_index: Int, from_rep: HistoryPoint, to_rep: Histor
 
   // End case, have already done all hosts ins the repertoire
   if (gti(host_index, length(from_rep.repertoire))) {            
-		return ProposedHistory{log_debt = 0.0, events = []};       
+		return ProposedHistory{log_debt = 0.0, events = [], success = true};       
 	}
+  // Here we do rejection sampling
   let propHist1 = propose_events_for_host(host_index, from_rep.age, to_rep.age, 
 		from_rep.repertoire[host_index], to_rep.repertoire[host_index], qMatrix);
 
-  let propHist2 = propose_events(addi(host_index, 1), from_rep, to_rep, qMatrix);
-
-  return ProposedHistory{log_debt = propHist1.log_debt + propHist2.log_debt, 
-												 events = join([propHist1.events, propHist2.events])};
-
-	}
+  // Now check if we succeeded in reaching the right end state
+  if (propHist1.success) {
+    // We succeeded in finding a repertoire, so we can move to the next host!  
+    let propHist2 = propose_events(addi(host_index, 1), from_rep, to_rep, qMatrix);
+    return ProposedHistory{
+      log_debt = propHist1.log_debt + propHist2.log_debt, 
+      events = join([propHist1.events, propHist2.events]),
+      success = propHist1.success && propHist2.success
+    };
+  } else {
+    // We failed to find a repertoire that ended in the correct state, 
+    // so we must sample again
+    return propose_events(host_index, from_rep, to_rep, qMatrix);
+  }
+}
 
 // Propose events for one host
 function propose_events_for_host (host_index: Int, from_age: Real, end_age: Real,
@@ -339,14 +358,10 @@ function propose_events_for_host (host_index: Int, from_age: Real, end_age: Real
 		
 	let rate = -(mtxGet(addi(from_state,1), addi(from_state,1), qMatrix));
   
-  // Kill the particle if we are trying to subdivide a time segment that
-  // is too short. This will come with a big penalty in either case but
-  // continuing to run the code will result in numerical problems like
-  // sampling waiting times that are -0. and getting debts that are inf,
-  // both of which are difficult to handle.
+ // We want to reject the sample if it didn't reach the end state in close enough time
   if (rate * (from_age - end_age) < 1E-15 && !eqi(from_state,end_state)) {
-    weight 0.0;
-    resample;
+    // We return false, so the values will not be used
+    return ProposedHistory{log_debt = 0.0, events = [], success = false};
   }
 
   let t = getWaitingTime(from_state, end_state, rate, from_age, end_age);
@@ -358,7 +373,7 @@ function propose_events_for_host (host_index: Int, from_age: Real, end_age: Real
 	// efficiency. It also saves us from storing the actual draw.
 	if (new_age < end_age) {
 		let log_wait_debt = poissonLogScore(0, PoissonParam{rate = rate*(from_age - end_age)});
-		return ProposedHistory{log_debt = log_wait_debt, events = []};
+		return ProposedHistory{log_debt = log_wait_debt, events = [], success = true};
 	}
 
   let log_wait_debt = getLogWaitDebt(from_state, end_state, rate, from_age, end_age, t);
@@ -375,7 +390,13 @@ function propose_events_for_host (host_index: Int, from_age: Real, end_age: Real
 	let event = Event{age = new_age, host = host_index, from_state = from_state, to_state = new_state};
 	let propHist = propose_events_for_host(host_index, new_age, end_age, new_state, end_state, qMatrix);
 
-	return ProposedHistory{log_debt = log_wait_debt+log_event_debt+propHist.log_debt, events = join([[event], propHist.events])};
+  // We need to propagate the success parameter backwards in time
+  // In this implementation we save the full history but just set the success parameter false if it failed at all
+	return ProposedHistory{
+    log_debt = log_wait_debt+log_event_debt + propHist.log_debt,
+    events = join([[event], propHist.events]),
+    success = propHist.success
+  };
 
 }
 
@@ -445,14 +466,7 @@ function simulate_by_event (repertoire: Int[], eventSeq: Event[], event_index: I
 	let the_event = eventSeq[event_index];
 	let rate = getRate(repertoire, the_event.host, the_event.to_state, mp);
 	let change_rate = total_rate(repertoire, mp);
-
-	// Note that the first statement will capture the cases where the proposed
-	// history is impossible because the repertoire we are supposed to go to is
-	// empty (the rate is zero).
-	if (rate == 0.0) {
-    weight 0.0;
-    resample;
-  }
+	
   let exp_log_prob = exponentialLogScore(from_age - the_event.age, ExponentialParam{rate=change_rate});
   let logScore = exp_log_prob + log(rate/change_rate);
 
@@ -482,14 +496,15 @@ function getRate (repertoire: Int[], host_index: Int, to_state: Int, mp: ModelPa
 
   // Losses are easy, no cross-repertoire modification used here
   if (gti(from_state, to_state)) {
-		
-		let n2s = fold(count2s, 0, repertoire);
-		if (eqi(from_state, 2) && Real(n2s) == 1.0) { 
-			return 0.0;
-		} else {
-			return base_rate;
-		}
-	} else {
+    // The rejection sampling we have done previously ensure that sequence does
+    // not contain illegal transitions so we can just return the base rate.
+    // However, we add a check here for the time being
+    let n2s = fold(count2s, 0, repertoire);
+    if (eqi(from_state, 2) && eqi(n2s, 1)) {
+      error("INVALID REPERTOIRE; THIS SHOULD HAVE BEEN CAUGHT BEFORE!");
+    }
+    return base_rate;
+  } else {
     
     // We have a gain rate, so we need to factor in beta-dependent cross-repertoire effect
     if (eqi(from_state, 0)) {
@@ -549,6 +564,38 @@ function get_rep_debt (tree: HistoryTree): Real {
 	}
 }
 
+function all_times_valid_rep(currRep: Int[], pHist: ProposedHistory, eventSeq: Event[], eventIndex: Int): Bool {
+  let n_events = length(eventSeq);
+  if gti(eventIndex, n_events) {
+    // We reached the end of the proposed history, the repertoire was valid!
+    return true;
+  } else {
+
+    let event = eventSeq[eventIndex];
+    if (eqi(event.from_state, 2)) {
+      let n2s = fold(count2s, 0, currRep);
+      if eqi(n2s, 1) {
+        // We have a loss event on repertoire with a single true hosts, so it is invalid
+        return false;
+      }
+    }
+    // The repertoire is still valid, update it with the new event
+    let hostIndex = event.host;
+    let newRep = join(
+      [
+        slice(currRep, 1, hostIndex),
+        [event.to_state],
+        slice(currRep, addi(hostIndex, 1), addi(length(currRep), 1))
+      ]
+    );
+    return all_times_valid_rep(
+      newRep,
+      pHist, 
+      eventSeq,
+      addi(eventIndex, 1)
+    );
+  }
+}
 
 /*---------------- Help functions --------------------------*/
 

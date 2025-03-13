@@ -1,28 +1,17 @@
 process compile_model {
     label 'compile'
     container "${ params.container_treeppl }"
-    // This accepts the compile id,
-    // the seed to the algorithm
-    // a key for what model to select,
-    // and flags specfifying the inference algorithm
+
     input:
-        tuple val(compile_id), val(runid), val(model_key), val(inference_flags)
+        tuple val(compile_id), val(runid), val(model_dir), val(model_key), path(model_path), val(inference_flags)
 
     output:
-        tuple val(compile_id), path("${model_key}.${compile_id}.bin"), emit: hostrep_bin
+        tuple val(compile_id), path("${model_dir}.${model_key}.${compile_id}.bin"), emit: hostrep_bin
     
     script:
-    def model_fns = [
-        original:         "host_rep_original.tppl",         // Original implementation by Mariana Pires Braga
-        no_weight:        "host_rep_no_weight.tppl",        // Will sample from the proposal distribution (independence model with image restriction)
-        rejection_simple: "host_rep_rejection_simple.tppl", // Removes weight 0.0; resample; (SMC specific) in independence model, replaces with rejection sampling
-        rejection_full:   "host_rep_rejection_full.tppl",   // Adds rejection sampling with checking if parasite has host at all times
-        uniformization:   "host_rep_uniformization.tppl",   // Uniformization along branches, adjusts for repertoire along branches with RS
-    ] // We could just use string interpolation for this, but I think this is less hacky
-    def model_fn = model_fns[model_key]
-    def out_fn = "${model_key}.${compile_id}.bin"
+    def out_fn = "${model_dir}.${model_key}.${compile_id}.bin"
     """
-    tpplc $baseDir/models/${model_fn} \
+    tpplc ${model_path} \
         --output ${out_fn} \
         --seed ${runid} \
         ${inference_flags}
@@ -30,17 +19,9 @@ process compile_model {
     """
 
     stub:
-    def model_fns = [
-        original:         "host_rep_original.tppl",         // Original implementation by Mariana Pires Braga
-        no_weight:        "host_rep_no_weight.tppl",        // Will sample from the proposal distribution (independence model with image restriction)
-        rejection_simple: "host_rep_rejection_simple.tppl", // Removes weight 0.0; resample; (SMC specific) in independence model, replaces with rejection sampling
-        rejection_full:   "host_rep_rejection_full.tppl",   // Adds rejection sampling with checking if parasite has host at all times
-        uniformization:   "host_rep_uniformization.tppl",   // Uniformization along branches, adjusts for repertoire along branches with RS
-    ] // We could just use string interpolation for this, but I think this is less hacky
-    def model_fn = model_fns[model_key]
-    def out_fn = "${model_key}.${compile_id}.bin"
+    def out_fn = "${model_dir}.${model_key}.${compile_id}.bin"
     """
-    cat $baseDir/models/${model_fn}
+    cat ${model_path}
     echo ${inference_flags} > ${out_fn}
     chmod +x ${out_fn}
     """

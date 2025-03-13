@@ -60,6 +60,7 @@ workflow {
             // and give each a unique id
             // If we want to run several models we can specify their keys as --treeppl_model_name <model_key1>,<model_key2> etc.
             def model_names = Channel.fromList(params.treeppl_model_name.tokenize(','))
+            def model_dir = Channel.of(params.treeppl_model_dir)
             def inference_flags
             if (params.inference_algorithm == "mcmc-lw-dk") {
 
@@ -85,27 +86,32 @@ workflow {
             }
 
             // Create a channel model and flag combinations
-            model_flag_combinations = model_names.combine(inference_flags)
+            model_flag_combinations = model_dir.combine(model_names).combine(inference_flags)
 
         } else {
             // We have a model specification file, use that instead
             model_flag_combinations = Channel.fromPath(params.models)
-                | splitCsv(sep:"\t", header:["model_name", "inference_flags"])
-                | map {row -> [row.model_name, row.inference_flags]}
+                | splitCsv(sep:"\t", header:["model_dir", "model_name", "inference_flags"])
+                | map {row -> [row.model_dir, row.model_name, row.inference_flags]}
         }
         // Add the rest of the parameters, and the compile id
         compile_id = 0
-        compile_in_ch = runid.combine(model_flag_combinations)
-            .map {rid, mn, flags -> [compile_id++, rid, mn, flags]}
+        compile_config_ch = runid.combine(model_flag_combinations)
+            .map {rid, md, mn, flags -> [compile_id++, rid, md, mn, flags]}
 
         // Save the compile configuration corresponding to each compile id to a file
-        compile_in_ch.collectFile(
+        compile_config_ch.collectFile(
             name: "compile_id_to_configuration.csv",
             storeDir: file(params.bindir),
             newLine: true
-        ) {cid, rid, mn, flags -> "$cid\t$rid\t$mn\t${flags}"}
+        ) {cid, rid, md, mn, flags -> "$cid\t$rid\t$md\t$mn\t${flags}"}
 
         // Create all binaries we require
+        compile_in_ch = compile_config_ch
+            .map {
+                cid, rid, md, mn, flags ->
+                [cid, rid, md, mn, "$baseDir/models/${params.version_model_dir}/${md}/${mn}.tppl", flags]
+            }
         compile_model(compile_in_ch)
 
         // Create the in file channel

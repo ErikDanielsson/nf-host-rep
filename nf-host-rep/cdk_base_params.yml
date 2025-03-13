@@ -1,0 +1,9 @@
+outdir: "cdk-output"
+ngens: 1
+nruns: 2
+niter: 1000
+run_revbayes: false
+run_treeppl: true
+nhosts: 3
+nsymbionts: 3
+models: "cdk_models.csv"

@@ -1,0 +1,2 @@
+basic	no_weight	-m mcmc-lightweight --align --cps none --kernel 
+cdk	no_weight	-m mcmc-lightweight --align --cps none --kernel 
