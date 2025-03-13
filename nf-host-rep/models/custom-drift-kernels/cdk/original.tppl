@@ -1,3 +1,4 @@
+import "stdlib::seq.mc"
 /*
  *  Host repertoire model (original implementation by Mariana Pires Braga)
  *  
@@ -195,7 +196,7 @@ function postorder_msgs(tree: TreeLabeled, iMatrix: Matrix[Real], qMatrix: Matri
   let left_in_msg  = sapply1(left.out_msg, mtxMul, tMatrixLeft);
   let right_in_msg = sapply1(right.out_msg, mtxMul, tMatrixRight);
 
-  let out_msg = normalizeMessage(mulMessage(left_in_msg, right_in_msg));
+  let out_msg = messageNormalize(messageElemMul(left_in_msg, right_in_msg));
 
   return MsgNode{age= tree.age, label= tree.label, left= left, right= right, 
     left_in_msg = left_in_msg, right_in_msg = right_in_msg, out_msg = out_msg};
@@ -230,8 +231,8 @@ function makeStateMessage(interaction: Real): Matrix[Real] {
 // Compute final probabilities from belief propagation on the observed symbiont tree
 function final_probs(tree: MsgTree, parent_msg: Matrix[Real][], qMatrix: Matrix[Real], tune: Real) : ProbsTree {
     
-  let probs = normalizeMessage(
-		messageElementPower(mulMessage(tree.out_msg, parent_msg), tune)
+  let probs = messageNormalize(
+		messageElemPow(messageElemMul(tree.out_msg, parent_msg), tune)
   );
 
   if tree is MsgLeaf {
@@ -244,8 +245,8 @@ function final_probs(tree: MsgTree, parent_msg: Matrix[Real][], qMatrix: Matrix[
   let tMatrixLeft = mtxExp(mtxSclrMul(left_branch, qMatrix));
   let tMatrixRight = mtxExp(mtxSclrMul(right_branch, qMatrix));
 
-  let left_parent_msg  = sapply1(mulMessage(parent_msg,tree.left_in_msg), mtxMul, tMatrixLeft);
-  let right_parent_msg = sapply1(mulMessage(parent_msg,tree.right_in_msg), mtxMul, tMatrixRight);
+  let left_parent_msg  = sapply1(messageElemMul(parent_msg,tree.left_in_msg), mtxMul, tMatrixLeft);
+  let right_parent_msg = sapply1(messageElemMul(parent_msg,tree.right_in_msg), mtxMul, tMatrixRight);
 
   let left  =  final_probs(tree.left,  left_parent_msg, qMatrix, tune);
   let right =  final_probs(tree.right, right_parent_msg, qMatrix, tune);
@@ -494,12 +495,12 @@ function getRate (repertoire: Int[], host_index: Int, to_state: Int, mp: ModelPa
     // We have a gain rate, so we need to factor in beta-dependent cross-repertoire effect
     if (eqi(from_state, 0)) {
       let current_hosts = whichTrue(sapply(repertoire, is1or2)); 
-      let dist = tensorMean(mtxRowCols(mp.dMatrix, host_index, current_hosts));
+      let dist = mtxMean(mtxRowCols(mp.dMatrix, host_index, current_hosts));
       return base_rate * (exp(-(mp.beta*(dist/mp.dMean))));
 
     } else {
       let current_hosts = whichTrue(sapply(repertoire, is2));   
-      let dist = tensorMean(mtxRowCols(mp.dMatrix, host_index, current_hosts));
+      let dist = mtxMean(mtxRowCols(mp.dMatrix, host_index, current_hosts));
       return base_rate * (exp(-(mp.beta*(dist/mp.dMean))));
     }
   }

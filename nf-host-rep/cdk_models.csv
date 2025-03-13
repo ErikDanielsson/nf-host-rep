@@ -1,2 +1,4 @@
-basic	no_weight	-m mcmc-lightweight --align --cps none --kernel 
-cdk	no_weight	-m mcmc-lightweight --align --cps none --kernel 
+basic	no_weight	-m mcmc-lightweight --align --cps full --kernel 
+basic	original	-m mcmc-lightweight --align --cps full --kernel 
+basic	rejection_full	-m mcmc-lightweight --align --cps full --kernel 
+basic	rejection_simple	-m mcmc-lightweight --align --cps full --kernel 

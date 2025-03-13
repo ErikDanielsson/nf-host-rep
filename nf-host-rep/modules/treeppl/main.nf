@@ -43,11 +43,11 @@ process run_hostrep_treeppl {
         val niter
     
     output:
-        tuple val(genid), val(compile_id), path("output.${genid}.${compile_id}.json"), emit: output_json
+        tuple val(genid), val(compile_id), path("output.${genid}.${compile_id}.json"), path("log.${genid}.${compile_id}.txt"), emit: output_json
     
     script:
     """
-    ./${hostrep_bin} ${phyjson_file} ${niter} > output.${genid}.${compile_id}.json
+    ./${hostrep_bin} ${phyjson_file} ${niter} > output.${genid}.${compile_id}.json 2> log.${genid}.${compile_id}.txt
     """
 
     stub:
