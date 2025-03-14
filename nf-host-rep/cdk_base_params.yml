@@ -1,8 +1,8 @@
-outdir: "cdk-output"
+runname: "custom-drift-kernels"
 ngens: 1
 nruns: 2
-niter: 1000
-run_revbayes: false
+niter: 10000
+run_revbayes: true
 run_treeppl: true
 nhosts: 3
 nsymbionts: 3

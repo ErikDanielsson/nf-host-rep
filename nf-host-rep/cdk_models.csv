@@ -1,4 +1,3 @@
-basic	no_weight	-m mcmc-lightweight --align --cps full --kernel 
-basic	original	-m mcmc-lightweight --align --cps full --kernel 
-basic	rejection_full	-m mcmc-lightweight --align --cps full --kernel 
-basic	rejection_simple	-m mcmc-lightweight --align --cps full --kernel 
+independence	no_weight	-m mcmc-lightweight --align --cps full --kernel 
+independence	rejection_full	-m mcmc-lightweight --align --cps full --kernel 
+independence	original	-m mcmc-lightweight --align --cps full --kernel 

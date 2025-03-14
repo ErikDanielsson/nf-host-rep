@@ -43,7 +43,8 @@ if not CACHE or CLEAR_CACHE:
     proc_output.clear_temp_dir(tempdir_suffix=RUN_NAME)
 
 # Set the names of the output directories
-outdir = CWD / RUN_NAME
+glob_outdir = CWD / "simulations"
+outdir = glob_outdir / RUN_NAME
 datadir = outdir / "data"
 simdir = outdir / "sims"
 bindir = outdir / "bins"
@@ -136,12 +137,12 @@ else:
 """
 
 tppl_trace_plot_text = """
-### TreePPL trace plot ___groupby_key___ = ___groupby_value___
+### TreePPL trace plot `___groupby_key___` = `___groupby_value___`
 """
 
 tppl_trace_plot_cell_template = """
 # | label: fig-trace-tppl-___fig_counter___
-# | fig-cap: "___nsamples___ samples from the TPPL implementation with drift param ___groupby_value___"
+# | fig-cap: "___nsamples___ samples from the TPPL implementation  `___groupby_value___`"
 az.plot_trace(reduced_df_tppl.loc["___groupby_value___", "multi_channel"], compact=False)
 plt.show()
 """
@@ -180,7 +181,7 @@ def generate_report(run_name, burnin=0):
     # any automatically generated report files
     report_name = f"report_{run_name}.gen.qmd"
 
-    groupby_key_tppl = "drift"
+    groupby_key_tppl = "model_name"
     groupby_key_rb = "file_type"
     groupby_value_rb = "rb"
 

@@ -1,7 +1,7 @@
 import "stdlib::seq.mc"
 /*
  *  Host repertoire model with full rejection sampling
- *
+ *  
  * Uniformization along branches instead of rejection sampline.
  * It adjusts for repertoire along branches with rejection sampling
  *
@@ -103,7 +103,6 @@ type UBranchHistoryAndDebt = UBranchHistoryAndDebt {
 
 model function mymodel(symbiont_tree: TreeLabeled, ntips: Int, nhosts: Int, interactions: Int[],
   host_distances: Real[], dMean: Real, tune: Real): ReturnType {
-
   // Set priors for model parameters
   assume lambda ~ Dirichlet([1.0,1.0,1.0,1.0]) drift Dirichlet([1.0,1.0,1.0,1.0]); 
   assume mu ~ Exponential(10.0) drift Exponential(10.0);
@@ -134,7 +133,7 @@ model function mymodel(symbiont_tree: TreeLabeled, ntips: Int, nhosts: Int, inte
   // Propose a repertoire for the root of the symbiont tree
   // based on the state probabilities from the belief propagation
   let probRecordSequence = sapply(probs_tree.probs, createProbRecord);
-  let root_rep = sapply(probRecordSequence, dk_categorical);
+  let root_rep = sapply(probRecordSequence, categorical);
 
   let log_root_rep_debt = seqSumReal(zipWith(categoricalLogScore, root_rep, probRecordSequence));
 	// Note: categorical works here because root_rep id 0-based
@@ -282,16 +281,21 @@ function final_probs(tree: MsgTree, parent_msg: Matrix[Real][], qMatrix: Matrix[
 function simulate (tree: ProbsTree, start: HistoryPoint, mp: ModelParams, iMatrix: Matrix[Real]) : HistoryTree {
     
   let probRecordSequence = sapply(tree.probs, createProbRecord);
+  
   let repertoire = suggestRepertoireWithRS(probRecordSequence);
+  printLn("Suggested repertoire");
   let log_rep_debt = seqSumReal(zipWith(categoricalLogScore, repertoire, probRecordSequence)); 
+  printLn("Computed debt");
   // Propose a repertoire. The propose mechanism means that the simulation
   // should be "penalized" for the probability associated with the draw. 
   let probs = getProbs(tree);  // TODO: is this needed?
   let probRecordSequence = sapply(tree.probs, createProbRecord);
-  
 
+  printLn("Before get age");
 	let stop = HistoryPoint{age = getProbsTreeAge(tree), repertoire = repertoire};
+  printLn("Before simulated history");
 	let history = simulate_history(0, 100, start, stop, mp);
+  printLn("After simulated history");
   
 	if tree is ProbsLeaf {
 
@@ -316,7 +320,12 @@ function simulate (tree: ProbsTree, start: HistoryPoint, mp: ModelParams, iMatri
 // Suggest valid repertoire based on rejection sampling
 function suggestRepertoireWithRS(probRecordSequence: CategoricalParam[]): Int[] {
   // Note: categorical works here because repertoire id 0-based
-  let repertoire = sapply(probRecordSequence, dk_categorical);      // Note: assume is within function categorical
+  // let repertoire1 = categorical(probRecordSequence[1]);
+  // let repertoire2 = categorical(probRecordSequence[2]);
+  // let repertoire3 = categorical(probRecordSequence[3]);
+  printLn("Before repertoire");
+  let repertoire = sapply(probRecordSequence, categorical);      // Note: assume is within function categorical
+  printLn("After repertoire");
   if any(is2, repertoire) {
     // The repertoire is valid, return it! 
     return repertoire;
@@ -325,9 +334,41 @@ function suggestRepertoireWithRS(probRecordSequence: CategoricalParam[]): Int[] 
   }
 }
 
-function dk_categorical(param: CategoricalParam) {
-  assume x ~ Categorical(param.probs) drift Categorical(param.probs);
-  return x;
+type RITuple = RITuple {
+  r: Real, i: Int, b: Bool
+}
+function mockCategorical(param: CategoricalParam) {
+  printLn("Mock categorical");
+  assume u ~ Uniform(0., 1.) drift Uniform(0., 1.);
+  printLn("assumed");
+  let acc = fold(
+    function (acc: RITuple, v: Real) {
+      if acc.r + v >= u {
+        if acc.b  {
+          return acc;
+        } else {
+          return RITuple {
+            r = acc.r + v,
+            i = addi(acc.i, 1),
+            b = true
+          };
+        }
+      } else {
+        return RITuple {
+          r = acc.r + v,
+          i = addi(acc.i, 1),
+          b = false
+        };
+      }
+    },
+    RITuple { r = 0., i = subi(0, 1), b = false },
+    param.probs
+  );
+  printLn("computed acc");
+  return acc.i;
+  // assume x ~ Categorical(param.probs) drift Categorical(param.probs);
+  // printLn("Nej");
+  // return x;
 }
 
 // Simulate history conditional on initial repertoire, start time, and end
@@ -335,14 +376,18 @@ function dk_categorical(param: CategoricalParam) {
 // condition the simulation on those events.
 function simulate_history(it: Int, max_reject: Int, from_rep: HistoryPoint, to_rep: HistoryPoint, mp: ModelParams) : HistoryPoint[] {
 
+  printLn("In simualte history");
   if (eqi(it, max_reject)) {
     weight 0.0;
     resample;
   }
+  printLn("Before propose");
   let proposed_unordered_events = propose_events(1, from_rep, to_rep, mp.qMatrix);
+  printLn("Finished propose");
   // order events by decreasing age
   // printLn("Before sort");
 	let eventSeq = qSort(subAge, proposed_unordered_events.events);
+  printEventSeq(eventSeq);
   // Check if the repertoire has at least one 2 at all time points
   // printLn("Before all times valid rep");
   // printProposedHistory(proposed_unordered_events);
@@ -361,7 +406,7 @@ function simulate_history(it: Int, max_reject: Int, from_rep: HistoryPoint, to_r
   } else {
     // We failed to find a repertoire that satisfied the "one host at all times"
     // requirement, so we reject the proposal and resample the repertoire
-    printLn("Invalid reperotoire, rejecting");
+    // printLn("Invalid reperotoire, rejecting");
     return simulate_history(addi(it, 1), max_reject, from_rep, to_rep, mp);
   }
 }
@@ -667,7 +712,10 @@ function sampleForwards(
     let stateProbs = rowMatrixToSeq(totMsg);
     // printLn(join(["Sampling event ", int2string(i)]));
     // printSeqFloat(stateProbs);
+    printLn("Sample forwards: Before categorical");
+    printSeqFloat(stateProbs);
     assume sample ~ Categorical(stateProbs) drift Categorical(stateProbs); // Sample the next state
+    printLn("Sample forwards: After categorical");
     // printLn(join(["Sampled state ", int2string(sample)]));
     let currDebt = categoricalLogPmf(stateProbs, sample);
     // Go to the next state in the chain.
