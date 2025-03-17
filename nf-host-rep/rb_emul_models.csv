@@ -1,0 +1,8 @@
+rb_emul	rejection_full	-m mcmc-lightweight --align --cps full --kernel 
+rb_emul	rejection_simple	-m mcmc-lightweight --align --cps full --kernel 
+rb_emul	original	-m mcmc-lightweight --align --cps full --kernel 
+rb_emul	no_weight	-m mcmc-lightweight --align --cps full --kernel 
+independence	rejection_full	-m mcmc-lightweight --align --cps full --kernel 
+independence	rejection_simple	-m mcmc-lightweight --align --cps full --kernel 
+independence	original	-m mcmc-lightweight --align --cps full --kernel 
+independence	no_weight	-m mcmc-lightweight --align --cps full --kernel 

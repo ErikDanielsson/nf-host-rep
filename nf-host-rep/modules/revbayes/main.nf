@@ -1,7 +1,7 @@
 process run_hostrep_revbayes {
     label 'sim'
 
-    container "${ params.container_revbayes }"
+    container "${ workflow.containerEngine == 'podman' ? 'docker.io/' : ''}${ params.container_revbayes }"
 
     input:
         tuple val(runid), val(genid), path(symbiont_tree_file), path(host_tree_file), path(interactions_nex_file)

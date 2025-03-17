@@ -1,9 +1,10 @@
 process compile_model {
     label 'compile'
-    container "${ params.container_treeppl }"
+    container "${ workflow.containerEngine == 'podman' ? 'docker.io/' : ''}${ params.container_treeppl }"
 
     input:
         tuple val(compile_id), val(runid), val(model_dir), val(model_key), path(model_path), val(inference_flags)
+        path(lib_path)
 
     output:
         tuple val(compile_id), path("${model_dir}.${model_key}.${compile_id}.bin"), emit: hostrep_bin
@@ -23,23 +24,17 @@ process compile_model {
     """
     cat ${model_path}
     echo ${inference_flags} > ${out_fn}
+    ls -la ${lib_path} >> ${out_fn}
     chmod +x ${out_fn}
     """
 }
 
 process run_hostrep_treeppl {
     label 'sim'
-    container "${ params.container_treeppl }"
-
-    /*
-    The treeppl implementation is light in memory use for most of the
-    execution but uses a lot of memory at the end of the execution (upwards of
-    10Gb). This is a hacky way of trying many runs at first, and then settling
-    for fewer if they collide to much
-    */
+    container "${ workflow.containerEngine == 'podman' ? 'docker.io/' : ''}${ params.container_treeppl }"
 
     input:
-        tuple val(compile_id), path(hostrep_bin), val(genid), path(phyjson_file) 
+        tuple val(compile_id), path(hostrep_bin), val(genid), path(phyjson_file)//, path(lib_path)
         val niter
     
     output:
@@ -53,5 +48,6 @@ process run_hostrep_treeppl {
     stub:
     """
     touch output.${genid}.${compile_id}.json
+    echo $niter > log.${genid}.${compile_id}.txt
     """
 }
