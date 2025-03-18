@@ -1,6 +1,6 @@
 process compile_model {
     label 'compile'
-    container "${ workflow.containerEngine == 'podman' ? 'docker.io/' : ''}${ params.container_treeppl }"
+    container "${ params.container_treeppl }"
 
     input:
         tuple val(compile_id), val(runid), val(model_dir), val(model_key), path(model_path), val(inference_flags)
@@ -31,7 +31,7 @@ process compile_model {
 
 process run_hostrep_treeppl {
     label 'sim'
-    container "${ workflow.containerEngine == 'podman' ? 'docker.io/' : ''}${ params.container_treeppl }"
+    container "${ params.container_treeppl }"
 
     input:
         tuple val(compile_id), path(hostrep_bin), val(genid), path(phyjson_file)//, path(lib_path)
