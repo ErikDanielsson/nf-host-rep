@@ -1,0 +1,102 @@
+#!/usr/bin/rb
+
+# settings
+
+genid = args[1]
+beta = args[2]
+clock = args[3]
+phy_plant_fn = args[4]
+phy_insect_fn = args[5]
+dat_insect_fn = args[6]
+out_fp = args[7] + "/"
+out_prefix = args[8]
+
+seed(genid)
+
+out_fn_prefix = out_fp + out_prefix
+nex_out_fn = out_fn_prefix + "_interactions.nex"
+
+phy_plant <- readTrees(phy_plant_fn)[1]
+phy_insect <- readTrees(phy_insect_fn)[1]
+
+# get the dataset dimensions
+n_plant_tips <- phy_plant.ntips()
+n_plant_branches <- 2 * n_plant_tips - 2
+n_insect_branches <- 2 * phy_insect.ntips() - 2
+n_sites <- n_plant_tips
+
+# build model
+# host range event rate matrix (under iid model)
+switch_rates_pos ~ dnDirichlet( [1,1,1,1] )
+switch_rates_pos.setValue( simplex(5,50,25,20) )
+switch_rate_0_to_1 := switch_rates_pos[1]
+switch_rate_0_to_2 := 0.
+switch_rate_1_to_0 := switch_rates_pos[2]
+switch_rate_1_to_2 := switch_rates_pos[3]
+switch_rate_2_to_0 := 0.
+switch_rate_2_to_1 := switch_rates_pos[4]
+
+switch_rates := v( switch_rate_0_to_1, switch_rate_0_to_2, switch_rate_1_to_0, switch_rate_1_to_2, switch_rate_2_to_0, switch_rate_2_to_1 )
+
+Q_char := fnFreeK( switch_rates, false )
+
+
+# controls the effect of phylogenetic distances
+
+phy_scale[1] ~ dnExp(1)
+phy_scale[1].setValue(beta)
+phy_scale[2] := phy_scale[1]
+
+
+# host switching rate modifier
+rate_modifiers[1] := fnHostSwitchRateModifier(tree=phy_plant, gainScale=phy_scale)
+
+# instantaneous rate matrix of host range evolution events
+Q_host := fnRateGeneratorSequence(Q=Q_char,
+                                   numChars=n_plant_tips,
+                                   rateModifiers=rate_modifiers)
+
+# base rate (or "clock") of host range evolution
+if (!exists("clock")) clock = 0.01
+clock_host ~ dnExp(10)
+clock_host.setValue(clock)
+
+# For now, we use uniform root state priors over the states (0,1,2)
+rf_host <- simplex(1,1,1)
+
+
+# phylogenetic CTMC using data augmented histories under non-iid model
+m_host ~ dnPhyloCTMCDASequence(tree=phy_insect,
+                               Q=Q_host,
+                               branchRates=clock_host,
+                               rootFrequencies=rf_host,
+                               nSites=n_plant_tips,
+                               type="Standard",
+                               storeInternalNodes=true)
+
+# save output
+dat_insect <- m_host
+
+# write output
+writeNexus( dat_insect, filename=nex_out_fn)
+
+settings_str = "variable,value\n"
+settings_str += "sim_str,\"" + sim_str + "\"\n"
+settings_str += "insect_phy_fn,\"" + phy_insect_fn + "\n"
+settings_str += "insect_dat_fn,\"" + sim_str + ".nex\"\n"
+settings_str += "plant_phy_fn,\"" + phy_plant_fn + "\n"
+settings_str += "n_taxa_insect," + n_taxa_insect + "\n"
+settings_str += "n_taxa_plant," + n_taxa_plant + "\n"
+settings_str += "clock_host," + clock_host + "\n"
+settings_str += "switch_rate_0_to_1," + switch_rate_0_to_1 + "\n"
+settings_str += "switch_rate_1_to_2," + switch_rate_1_to_2 + "\n"
+settings_str += "switch_rate_1_to_0," + switch_rate_1_to_0 + "\n"
+settings_str += "switch_rate_2_to_1," + switch_rate_2_to_1 + "\n"
+settings_str += "phy_scale[1]," + phy_scale[1] + "\n"
+settings_str += "phy_scale[2]," + phy_scale[2] + "\n"
+
+write( settings_str, filename=out_fp+sim_str+".settings.txt")
+
+
+# done!
+quit()

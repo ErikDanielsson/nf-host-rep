@@ -1,0 +1,122 @@
+#!/usr/bin/env rb
+
+# Read the infiles and the output dir as command line args
+
+simid = args[1]
+niter = args[2]
+freq_subsample = args[3]
+phy_plant_fn = args[4]
+phy_insect_fn = args[5]
+dat_insect_fn = args[6]
+out_fp = args[7] + "/"
+out_prefix = args[8]
+
+seed(simid)
+
+# Define the output files
+out_fn_prefix = out_fp + out_prefix
+clock_mn_fn = out_fn_prefix + ".logger.log"
+print(clock_mn_fn)
+model_mn_fn = out_fn_prefix + ".log"
+print(model_mn_fn)
+char_sum_mn_fn = out_fn_prefix + ".history.txt"
+print(char_sum_mn_fn)
+phy_insect_mn_fn = out_fn_prefix + ".tre"
+print(phy_insect_mn_fn)
+
+phy_plant <- readTrees(phy_plant_fn)[1]
+phy_insect <- readTrees(phy_insect_fn)[1]
+dat_insect <- readDiscreteCharacterData(dat_insect_fn)
+
+mni = 1
+mvi = 1
+n_gen = int(niter)
+n_burn = 0 
+sample_freq = int(freq_subsample) 
+tune_freq = n_burn/10
+
+n_plant_tips <- phy_plant.ntips()
+n_plant_branches <- 2 * n_plant_tips - 2
+n_insect_branches <- 2 * phy_insect.ntips() - 2
+n_sites <- dat_insect.nchar()
+
+switch_rates_pos ~ dnDirichlet( [1,1,1,1] )
+switch_rate_0_to_1 := switch_rates_pos[1]
+switch_rate_0_to_2 := 0.
+switch_rate_1_to_0 := switch_rates_pos[2]
+switch_rate_1_to_2 := switch_rates_pos[3]
+switch_rate_2_to_0 := 0.
+switch_rate_2_to_1 := switch_rates_pos[4]
+
+switch_rates := v( switch_rate_0_to_1, switch_rate_0_to_2, switch_rate_1_to_0, switch_rate_1_to_2, switch_rate_2_to_0, switch_rate_2_to_1 )
+
+Q_char := fnFreeK( switch_rates, false )
+
+phy_scale[1] ~ dnExp(1)
+phy_scale[2] := phy_scale[1]
+
+rate_modifiers[1] := fnHostSwitchRateModifier(tree=phy_plant, gainScale=phy_scale)
+
+Q_host := fnRateGeneratorSequence(Q=Q_char,
+                                   numChars=n_plant_tips,
+                                   rateModifiers=rate_modifiers)
+
+clock_host ~ dnExp(10)
+
+rf_host <- simplex(1,1,1)
+
+m_host ~ dnPhyloCTMCDASequence(tree=phy_insect,
+                               Q=Q_host,
+                               branchRates=clock_host,
+                               rootFrequencies=rf_host,
+                               nSites=n_plant_tips,
+                               type="Standard")
+
+
+m_host.clamp(dat_insect)
+
+mv[mvi++] = mvScale( phy_scale[1], weight=1 )
+mv[mvi++] = mvSimplex(switch_rates_pos, alpha=10, weight=2, tune=false)
+mv[mvi++] = mvScale(clock_host, weight=2)
+mv[mvi++] = mvCharacterHistory(ctmc=m_host,
+                               qmap_seq=Q_host,
+                               lambda=0.2,
+                               graph="node",
+                               proposal="rejection",
+                               weight=n_insect_branches)
+mv[mvi++] = mvCharacterHistory(ctmc=m_host,
+                               qmap_seq=Q_host,
+                               lambda=0.2,
+                               graph="branch",
+                               proposal="rejection",
+                               weight=n_insect_branches*2)
+
+mv[mvi++] = mvSimplex(switch_rates_pos, alpha=25, weight=5, tune=false)
+mv[mvi++] = mvScale(clock_host, weight=5, lambda = 0.2)
+mv[mvi++] = mvCharacterHistory(ctmc=m_host,
+                               qmap_seq=Q_host,
+                               lambda=0.75,
+                               graph="node",
+                               proposal="rejection",
+                               weight=n_insect_branches/2)
+mv[mvi++] = mvCharacterHistory(ctmc=m_host,
+                               qmap_seq=Q_host,
+                               lambda=0.75,
+                               graph="branch",
+                               proposal="rejection",
+                               weight=n_insect_branches)
+
+mn[mni++] = mnScreen(clock_host, phy_scale, printgen=sample_freq)
+mn[mni++] = mnFile(clock_host, phy_scale, printgen=sample_freq, filename=clock_mn_fn)
+mn[mni++] = mnModel(printgen=sample_freq, filename=model_mn_fn)
+mn[mni++] = mnCharacterHistorySummary( filename=char_sum_mn_fn,
+                                       ctmc=m_host,
+                                       tree=phy_insect,
+                                       printgen=sample_freq )
+mn[mni++] = mnFile(phy_insect, filename=phy_insect_mn_fn, printgen=sample_freq)
+
+mdl = model(m_host)
+ch = mcmc(mdl, mn, mv)
+ch.run(n_gen)
+ch.operatorSummary()
+q()

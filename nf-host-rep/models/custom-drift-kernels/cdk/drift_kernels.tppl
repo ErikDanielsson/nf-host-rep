@@ -1,0 +1,36 @@
+/*
+ * Library of drift kernels emulating the drift kernels from the RevBayes implementation
+ */
+
+function simplexMove(x: Real[], alpha: Real) {
+  /*
+   * Drift kernel for Dirichlet distribution aka. probability simplex 
+   *
+   * Proposes from a different Dirichlet distribution centered at the previous value.
+   * The `alpha` parameter is the sum of the rates for each parameter and thus
+   * controls the width of the distribution (large alpha -- narrow distribution)
+   * 
+   * RevBayes source at:
+   * https://github.com/revbayes/revbayes/blob/master/src/core/moves/proposal/simplex/DirichletSimplexProposal.cpp
+   *
+   */
+  let new_params = sapply(x, function (a: Real) { return a * alpha; });
+  return Dirichlet(new_params);
+}
+
+function scaleMove(x: Real, lambda: Real) {
+  /*
+   * Drift kernel for distributions with support on positive real axis
+   * (like exponential r.v.s)
+   *
+   * In the original RevBayes implementation the move samples u ~ U[-0.5, 0.5]
+   * and returns x * exp(-lambda * u). This corresponds to a reciprocal (log-uniform)
+   * distribution on the interval [x exp(-lambda / 2), x exp(lambda / 2)]
+   * 
+   * RevBayes source at:
+   * https://github.com/revbayes/revbayes/blob/master/src/core/moves/proposal/scalar/ScaleProposal.cpp
+   *
+   */
+  return Reciprocal(x * exp(-lambda  / 2), x * exp(lambda / 2));
+}
+
