@@ -1,9 +1,0 @@
-outdir: "drift-scale-sim-output"
-ngens: 2
-nruns: 3
-niter: 25000
-run_revbayes: true
-run_treeppl: true
-nhosts: 3
-nsymbionts: 3
-models: "models.csv"
