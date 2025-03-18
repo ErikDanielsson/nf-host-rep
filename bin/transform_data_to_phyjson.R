@@ -29,7 +29,7 @@ nhosts <- Ntip(host_tree)
 interactions <- m
 host_distances <- cophenetic.phylo(host_tree)
 dMean <- sum(host_distances) / factorial(nhosts)
-tune <- 0.9
+tune <- 1.0
 
 phyjson_tree <- treepplr::tp_phylo_2_phyjson(symbiont_tree)
 phyjson_tree_rec <- tp_phyjson_list(phyjson_tree)

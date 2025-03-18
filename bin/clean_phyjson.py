@@ -35,6 +35,14 @@ def mod_host_distances(json_obj):
     json_obj["host_distances"] = [float(d) for d in json_obj["host_distances"]]
 
 
+def mod_tune_dMean(json_obj):
+    """
+    Convert 'tune' and 'dMean' fields in the json output to float
+    """
+    json_obj["tune"] = float(json_obj["tune"])
+    json_obj["dMean"] = float(json_obj["dMean"])
+
+
 # Read the input and output filenames
 json_fn = sys.argv[1]
 new_json_fn = sys.argv[2]
@@ -48,6 +56,9 @@ mod_symbiont_tree(json_obj)
 
 # Convert host distance fields
 mod_host_distances(json_obj)
+
+# Convert tune and dMean to float
+mod_tune_dMean(json_obj)
 
 # Write the correct json file
 with open(new_json_fn, "w") as fh:
