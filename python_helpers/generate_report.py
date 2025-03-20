@@ -18,7 +18,7 @@ import shutil
 from pathlib import Path
 
 CWD = Path(os.getcwd())
-sys.path.append(str(CWD / "../python_helpers/"))
+sys.path.append(str(CWD / "___python_helpers_dir___"))
 
 # Import the python helpers
 import proc_output
@@ -112,38 +112,67 @@ df_tppl_with_compile_params = proc_output.add_compile_params(
     df_tppl, compile_params
 )
 reduced_df_tppl = proc_output.create_multi_chain_dataset_df(
-    df_tppl_with_compile_params, ["___groupby_key___"]
+    df_tppl_with_compile_params, ___groupby_keys___
 )
 """
 create_multi_chain_rb_cell_template = """
 reduced_df_rb = proc_output.create_multi_chain_dataset_df(
     df_rb,
-    ["___groupby_key___"],
+    ___groupby_keys___,
 )
 """
+
 rb_trace_plot_text = """
-### RevBayes trace plot
+### RevBayes trace plot `___groupby_keys___` = `___groupby_value___`
 This is a reference run with the model implemented in RevBayes
 """
 
 rb_trace_plot_cell_template = """
 # | label: fig-___fig_counter___
 # | fig-cap: "___nsamples___ samples from the RevBayes implementation"
-if has_rb:
-    az.plot_trace(reduced_df_rb.loc["__groupby_value___", "multi_channel"], compact=False)
-    plt.show()
-else:
-    print("No RevBayes files found")
+az.plot_trace(
+    reduced_df_rb.loc[___groupby_value___, "multi_channel"],
+    figsize=(10, 10),
+    compact=False
+)
+plt.show()
 """
 
 tppl_trace_plot_text = """
-### TreePPL trace plot `___groupby_key___` = `___groupby_value___`
+### TreePPL trace plot `___groupby_keys___` = `___groupby_value___`
 """
 
 tppl_trace_plot_cell_template = """
 # | label: fig-trace-tppl-___fig_counter___
 # | fig-cap: "___nsamples___ samples from the TPPL implementation  `___groupby_value___`"
-az.plot_trace(reduced_df_tppl.loc["___groupby_value___", "multi_channel"], compact=False)
+az.plot_trace(
+    reduced_df_tppl.loc[___groupby_value___, "multi_channel"],
+    figsize=(10, 10),
+    compact=False
+)
+plt.show()
+"""
+rb_ESS_text = """
+### RevBayes ESS plots
+"""
+rb_ESS_plot_cell_template = """
+df_ess_rb = proc_output.get_ess_df(df_rb, [])
+proc_output.ess_bar_plot(df_ess_rb)
+plt.title("ESS for the RevBayes run")
+plt.tight_layout()
+plt.show()
+"""
+
+tppl_ESS_text = """
+### TreePPL ESS plots
+"""
+
+tppl_ESS_plots_cell_template = """
+groupby = ___groupby_keys___ 
+df_ess = proc_output.get_ess_df(df_tppl_with_compile_params, groupby)
+fig, axs = proc_output.ess_group_bar_plot(df_ess, groupby)
+fig.set_size_inches(10, 20)
+fig.tight_layout()
 plt.show()
 """
 
@@ -159,6 +188,12 @@ def get_fig_counter():
 def subst_variables(cell_str, variables={}):
     for indicator, value in variables.items():
         cell_str = cell_str.replace(indicator, str(value))
+    print(" ### EXECUTING ###")
+    print()
+    print(cell_str)
+    print()
+    print(" #################")
+    print()
     return cell_str
 
 
@@ -179,16 +214,25 @@ def create_text(text_str, variables={}):
 def generate_report(run_name, burnin=0):
     # Set .gen.qmd as file ending so that we can remove
     # any automatically generated report files
+    make_tppl_trace = False
+    make_rb_trace = False
+    ph_path_from_base_dir = "python_helpers/"
+    ph_path_from_self = "."
     report_name = f"report_{run_name}.gen.qmd"
 
-    groupby_key_tppl = "model_name"
-    groupby_key_rb = "file_type"
-    groupby_value_rb = "rb"
+    groupby_keys_tppl = ["model_dir", "model_name", "genid"]
+    groupby_keys_rb = ["file_type", "genid"]
 
     # Execute the python code we need to determine what pipeline was executed
     global_variables = {}
     exec(
-        subst_variables(python_imports_cell_template, {"___run_name___": run_name}),
+        subst_variables(
+            python_imports_cell_template,
+            {
+                "___run_name___": run_name,
+                "___python_helpers_dir___": ph_path_from_self,
+            },
+        ),
         global_variables,
     )
     exec(
@@ -198,25 +242,39 @@ def generate_report(run_name, burnin=0):
         ),
         global_variables,
     )
-    exec(
-        subst_variables(compile_params_cell_template),
-        global_variables,
-    )
-    exec(
-        subst_variables(
-            create_multi_chain_tppl_cell_template,
-            {"___groupby_key___": groupby_key_tppl},
-        ),
-        global_variables,
-    )
-    groupby_values_tppl = global_variables["reduced_df_tppl"].index
+    if global_variables["has_tppl"]:
+        exec(
+            subst_variables(compile_params_cell_template),
+            global_variables,
+        )
+        exec(
+            subst_variables(
+                create_multi_chain_tppl_cell_template,
+                {"___groupby_keys___": groupby_keys_tppl},
+            ),
+            global_variables,
+        )
+        groupby_values_tppl = global_variables["reduced_df_tppl"].index
+    if global_variables["has_rb"]:
+        exec(
+            subst_variables(
+                create_multi_chain_rb_cell_template,
+                {"___groupby_keys___": groupby_keys_rb},
+            ),
+            global_variables,
+        )
+        groupby_values_rb = global_variables["reduced_df_rb"].index
 
     # Generate the report
     with open(report_name, "w") as fh:
         fh.write(preamble_str)
         fh.write(
             create_quarto_cell(
-                python_imports_cell_template, {"___run_name___": run_name}
+                python_imports_cell_template,
+                {
+                    "___run_name___": run_name,
+                    "___python_helpers_dir___": ph_path_from_base_dir,
+                },
             )
         )
         fh.write(
@@ -235,35 +293,50 @@ def generate_report(run_name, burnin=0):
             fh.write(
                 create_quarto_cell(
                     create_multi_chain_rb_cell_template,
-                    {"___groupby_key___": groupby_key_rb},
-                )
-            )
-            fh.write(create_text(rb_trace_plot_text))
-            fh.write(
-                create_quarto_cell(
-                    rb_trace_plot_cell_template,
                     {
-                        "___fig_counter___": get_fig_counter(),
-                        "___nsamples___": 2500,
-                        "__groupby_value___": groupby_value_rb,
+                        "___groupby_keys___": groupby_keys_rb,
                     },
                 )
             )
+
+        if global_variables["has_rb"] and make_rb_trace:
+            for groupby_value in groupby_values_rb:
+                fh.write(
+                    create_text(
+                        rb_trace_plot_text,
+                        {
+                            "___groupby_keys___": groupby_keys_rb,
+                            "___groupby_value___": groupby_value,
+                        },
+                    )
+                )
+                fh.write(
+                    create_quarto_cell(
+                        rb_trace_plot_cell_template,
+                        {
+                            "___fig_counter___": get_fig_counter(),
+                            "___nsamples___": 2500,
+                            "___groupby_value___": groupby_value,
+                        },
+                    )
+                )
+
         if global_variables["has_tppl"]:
             fh.write(
                 create_quarto_cell(
                     create_multi_chain_tppl_cell_template,
-                    {"___groupby_key___": groupby_key_tppl},
+                    {"___groupby_keys___": groupby_keys_tppl},
                 )
             )
 
+        if global_variables["has_tppl"] and make_tppl_trace:
             for groupby_value in groupby_values_tppl:
                 fh.write(
                     create_text(
                         tppl_trace_plot_text,
                         {
                             "___groupby_value___": groupby_value,
-                            "___groupby_key___": groupby_key_tppl,
+                            "___groupby_keys___": groupby_keys_tppl,
                         },
                     )
                 )
@@ -274,10 +347,36 @@ def generate_report(run_name, burnin=0):
                             "___fig_counter___": get_fig_counter(),
                             "___nsamples___": str(2500),
                             "___groupby_value___": groupby_value,
-                            "___groupby_key___": groupby_key_tppl,
+                            "___groupby_keys___": groupby_keys_tppl,
                         },
                     )
                 )
+        if global_variables["has_rb"]:
+            fh.write(
+                create_text(
+                    rb_ESS_text,
+                    {},
+                )
+            )
+            fh.write(
+                create_quarto_cell(
+                    rb_ESS_plot_cell_template,
+                    {},
+                )
+            )
+        if global_variables["has_tppl"]:
+            fh.write(
+                create_text(
+                    tppl_ESS_text,
+                    {},
+                )
+            )
+            fh.write(
+                create_quarto_cell(
+                    tppl_ESS_plots_cell_template,
+                    {"___groupby_keys___": groupby_keys_tppl},
+                )
+            )
 
 
 def main():

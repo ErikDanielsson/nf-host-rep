@@ -3,6 +3,7 @@ import numpy as np
 import arviz as az
 import xarray as xr
 import matplotlib.pyplot as plt
+import seaborn as sns
 import json
 import re
 import os
@@ -218,16 +219,6 @@ def inference_data_from_dataframe(df, chain=0, burnin=0, subsample=1):
     return az.InferenceData(posterior=xdata)
 
 
-def np_data_from_dataframe(df, chain=0, burnin=0, subsample=1):
-    index = df.index[burnin::subsample]
-    df = df.iloc[index, :]
-    df.loc[:, "chain"] = chain
-    df.loc[:, "draw"] = index
-    df = df.set_index(["chain", "draw"])
-    return df.to_numpy
-    return az.InferenceData(posterior=xdata)
-
-
 def create_inference_data_df(file_df, read_funcs, burnin, subsample=1):
     file_df["inference_data"] = [
         inference_data_from_dataframe(
@@ -284,6 +275,65 @@ def create_multi_chain_dataset(inference_datas, type="genid"):
         }
 
 
+def approx_eq(f1, f2):
+    APPROX_SENSE = 1e-10
+    return abs(f1 - f2) < APPROX_SENSE
+
+
+def get_ess_df(df, groupby, data_col="inference_data"):
+
+    def xarray_to_series(data: az.InferenceData):
+        N = len(data.posterior.draw)
+        ess_all = az.ess(data, method="bulk")
+        vars = ess_all.keys()
+        return pd.Series(
+            [float(ess_all[v]) if not approx_eq(ess_all[v], N) else 0 for v in vars],
+            index=vars,
+        )
+
+    index_name = "index"
+    df.index.name = index_name
+    df_mi = df.reset_index()
+    df_mi = df_mi.set_index(groupby + [index_name])
+    df_mi = df_mi[data_col].apply(xarray_to_series)
+    df_mi = df_mi.reset_index()
+    return df_mi
+
+
+def ess_group_bar_plot(df_ess, groupby):
+    grouped_df_ess = df_ess.groupby(groupby)
+    fig, axs = plt.subplots(grouped_df_ess.ngroups, 1)
+    for i, (gname, group) in enumerate(grouped_df_ess):
+        ax = axs[i]
+        group = group.drop(groupby + ["weights"], axis=1)
+        ess_bar_plot(group, ax)
+        ax.set_title(f"ESS for model '{': '.join(map(str, gname))}'")
+    fig.tight_layout()
+    return fig, axs
+
+
+def calc_ess(df, data_col="inference_data"):
+    def xarray_to_series(data: xr.DataArray):
+        ess_all = az.ess(data, method="bulk")
+        vars = ess_all.keys()
+        return pd.Series([float(ess_all[v]) for v in vars], index=vars)
+
+    df_ess = df[data_col].apply(xarray_to_series)
+    return df_ess
+
+
+def ess_bar_plot(df_ess, ax=None):
+    df_ess_long = df_ess.melt(id_vars="index", var_name="Variable", value_name="ESS")
+    return sns.barplot(
+        data=df_ess_long,
+        y="Variable",
+        x="ESS",
+        hue="index",
+        legend=False,
+        ax=ax,
+    )
+
+
 def calc_ess_all(datas):
     def xarray_to_dict(xarray):
         data_vars = xarray.to_dict()["data_vars"]
@@ -296,42 +346,6 @@ def calc_ess_all(datas):
     }
     df = pd.DataFrame.from_dict(esses, orient="index")
     return df
-
-
-def ess_bar_plot(
-    ess_df: pd.DataFrame, fig=None, axs=None, c="b", label=None, width=0.9, mv=0.0
-):
-    n_gen = len(ess_df.index.levels[0])
-    n_runs = len(ess_df.index.levels[1])
-    if fig is None or axs is None:
-        fig, axs = plt.subplots(n_gen, 1)
-    ess_df_avg = ess_df.groupby(level=0).mean()
-    for i, genid in enumerate(ess_df_avg.index):
-        ax = axs[i]
-        ax.bar(
-            np.arange(len(ess_df_avg.columns)) + mv,
-            ess_df_avg.loc[genid, :],
-            color=c,
-            width=width,
-            label=label,
-        )
-        ax.set_ylabel(f"Genid {genid}")
-        ax.set_xticks(range(len(ess_df_avg.columns)), ess_df_avg.columns.to_list())
-        ax.legend()
-        # ax.set_xticks(ess_df_avg.columns)
-    fig.suptitle(f"Average ESS over {n_runs} runs")
-    return fig, axs
-
-
-def ess_box_plot(ess_df):
-    n_vars = len(ess_df.columns)
-    n_gen = len(ess_df.index.levels[0])
-    fig, axs = plt.subplots(n_gen, n_vars)
-    for i, genid in enumerate(ess_df.index.levels[0]):
-        for j, var_name in enumerate(ess_df.columns):
-            ax = axs[i, j]
-            ax.boxplot(ess_df.xs(genid, level=0)[var_name])
-    return fig, axs
 
 
 def get_time_files(outdir: Path):
