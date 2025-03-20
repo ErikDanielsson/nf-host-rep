@@ -75,36 +75,52 @@ m_host ~ dnPhyloCTMCDASequence(tree=phy_insect,
 
 m_host.clamp(dat_insect)
 
-mv[mvi++] = mvScale( phy_scale[1], weight=1 )
-mv[mvi++] = mvSimplex(switch_rates_pos, alpha=10, weight=2, tune=false)
-mv[mvi++] = mvScale(clock_host, weight=2)
-mv[mvi++] = mvCharacterHistory(ctmc=m_host,
-                               qmap_seq=Q_host,
-                               lambda=0.2,
-                               graph="node",
-                               proposal="rejection",
-                               weight=n_insect_branches)
-mv[mvi++] = mvCharacterHistory(ctmc=m_host,
-                               qmap_seq=Q_host,
-                               lambda=0.2,
-                               graph="branch",
-                               proposal="rejection",
-                               weight=n_insect_branches*2)
+weight_physcale = 1 
+weight_switch_rates_pos_1 = 2 
+weight_clock_host_1 = 2 
+weight_ch_node_1 = n_insect_branches
+weight_ch_branch_1 = n_insect_branches*2
+weight_switch_rates_pos_2 = 5 
+weight_clock_host_2 = 5 
+weight_ch_node_2 = n_insect_branches/2
+weight_ch_branch_2 = n_insect_branches
+total_weight = (weight_physcale
+    + weight_switch_rates_pos_1 + weight_clock_host_1
+    + weight_ch_node_1 + weight_ch_branch_1
+    + weight_switch_rates_pos_2 + weight_clock_host_2
+    + weight_ch_node_2 + weight_ch_branch_2
+)
 
-mv[mvi++] = mvSimplex(switch_rates_pos, alpha=25, weight=5, tune=false)
-mv[mvi++] = mvScale(clock_host, weight=5, lambda = 0.2)
+mv[mvi++] = mvScale( phy_scale[1], weight=weight_physcale )
+mv[mvi++] = mvSimplex(switch_rates_pos, alpha=10, weight=weight_switch_rates_pos_1, tune=false)
+mv[mvi++] = mvScale(clock_host, weight=weight_clock_host_1)
+mv[mvi++] = mvCharacterHistory(ctmc=m_host,
+                               qmap_seq=Q_host,
+                               lambda=0.2,
+                               graph="node",
+                               proposal="rejection",
+                               weight=weight_ch_node_1)
+mv[mvi++] = mvCharacterHistory(ctmc=m_host,
+                               qmap_seq=Q_host,
+                               lambda=0.2,
+                               graph="branch",
+                               proposal="rejection",
+                               weight=weight_ch_branch_1)
+
+mv[mvi++] = mvSimplex(switch_rates_pos, alpha=25, weight=weight_switch_rates_pos_2, tune=false)
+mv[mvi++] = mvScale(clock_host, weight=weight_clock_host_2, lambda = 0.2)
 mv[mvi++] = mvCharacterHistory(ctmc=m_host,
                                qmap_seq=Q_host,
                                lambda=0.75,
                                graph="node",
                                proposal="rejection",
-                               weight=n_insect_branches/2)
+                               weight=weight_ch_node_2)
 mv[mvi++] = mvCharacterHistory(ctmc=m_host,
                                qmap_seq=Q_host,
                                lambda=0.75,
                                graph="branch",
                                proposal="rejection",
-                               weight=n_insect_branches)
+                               weight=weight_ch_branch_2)
 
 mn[mni++] = mnScreen(clock_host, phy_scale, printgen=sample_freq)
 mn[mni++] = mnFile(clock_host, phy_scale, printgen=sample_freq, filename=clock_mn_fn)
@@ -117,6 +133,6 @@ mn[mni++] = mnFile(phy_insect, filename=phy_insect_mn_fn, printgen=sample_freq)
 
 mdl = model(m_host)
 ch = mcmc(mdl, mn, mv)
-ch.run(n_gen)
+ch.run(ceil(n_gen / total_weight)) # RevBayes does k = total_weight moves per iteration -- adjust so that it is comparable!
 ch.operatorSummary()
 q()
