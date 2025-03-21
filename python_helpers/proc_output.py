@@ -232,19 +232,6 @@ def create_inference_data_df(file_df, read_funcs, burnin, subsample=1):
     return file_df
 
 
-def create_np_data_df(file_df, read_funcs, burnin, subsample=1):
-    file_df["inference_data"] = [
-        np_data_from_dataframe(
-            read_funcs[row["file_type"]](row["filename"]),
-            chain=hash((row["genid"], row["compile_id"])),
-            burnin=burnin,
-            subsample=subsample,
-        )
-        for _, row in file_df.iterrows()
-    ]
-    return file_df
-
-
 def create_multi_chain_dataset_df(
     inference_datas, save_cols, data_col="inference_data"
 ):
@@ -255,24 +242,6 @@ def create_multi_chain_dataset_df(
     return inference_datas.groupby(save_cols).agg(
         multi_channel=pd.NamedAgg(column=data_col, aggfunc=reduce_col)
     )
-
-
-def create_multi_chain_dataset(inference_datas, type="genid"):
-    concat = lambda x, y: az.concat(x, y, dim="chain")
-    if type == "all":
-        return reduce(
-            concat,
-            (
-                data
-                for genid, run_datas in inference_datas.items()
-                for runid, data in run_datas.items()
-            ),
-        )
-    if type == "genid":
-        return {
-            genid: reduce(concat, run_datas.values())
-            for genid, run_datas in inference_datas.items()
-        }
 
 
 def approx_eq(f1, f2):
@@ -332,20 +301,6 @@ def ess_bar_plot(df_ess, ax=None):
         legend=False,
         ax=ax,
     )
-
-
-def calc_ess_all(datas):
-    def xarray_to_dict(xarray):
-        data_vars = xarray.to_dict()["data_vars"]
-        return {k: v["data"] for k, v in data_vars.items()}
-
-    esses = {
-        (genid, runid): xarray_to_dict(az.ess(data, method="mean"))
-        for genid, run_datas in datas.items()
-        for runid, data in run_datas.items()
-    }
-    df = pd.DataFrame.from_dict(esses, orient="index")
-    return df
 
 
 def get_time_files(outdir: Path):

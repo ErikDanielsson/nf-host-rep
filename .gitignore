@@ -184,3 +184,8 @@ testing*
 *.pyc
 null/
 .nf-test*
+
+# QUARTO
+*.gen.qmd
+*.gen.html
+*.gen_files
