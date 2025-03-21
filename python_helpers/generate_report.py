@@ -157,9 +157,11 @@ rb_ESS_text = """
 """
 rb_ESS_plot_cell_template = """
 df_ess_rb = proc_output.get_ess_df(df_rb, [])
-proc_output.ess_bar_plot(df_ess_rb)
-plt.title("ESS for the RevBayes run")
-plt.tight_layout()
+fig, ax = plt.subplots()
+proc_output.ess_bar_plot(df_ess_rb, ax)
+fig.suptitle("ESS for the RevBayes run")
+fig.set_size_inches(8, 10)
+fig.tight_layout()
 plt.show()
 """
 
@@ -171,7 +173,7 @@ tppl_ESS_plots_cell_template = """
 groupby = ___groupby_keys___ 
 df_ess = proc_output.get_ess_df(df_tppl_with_compile_params, groupby)
 fig, axs = proc_output.ess_group_bar_plot(df_ess, groupby)
-fig.set_size_inches(10, 20)
+fig.set_size_inches(8, 20)
 fig.tight_layout()
 plt.show()
 """
@@ -188,11 +190,12 @@ def get_fig_counter():
 def subst_variables(cell_str, variables={}):
     for indicator, value in variables.items():
         cell_str = cell_str.replace(indicator, str(value))
-    print(" ### EXECUTING ###")
+
+    print("#### EXECUTING ####")
     print()
     print(cell_str)
     print()
-    print(" #################")
+    print("###################")
     print()
     return cell_str
 
@@ -214,8 +217,8 @@ def create_text(text_str, variables={}):
 def generate_report(run_name, burnin=0):
     # Set .gen.qmd as file ending so that we can remove
     # any automatically generated report files
-    make_tppl_trace = False
-    make_rb_trace = False
+    make_tppl_trace = True
+    make_rb_trace = True
     ph_path_from_base_dir = "python_helpers/"
     ph_path_from_self = "."
     report_name = f"report_{run_name}.gen.qmd"
