@@ -1,4 +1,5 @@
 import "stdlib::seq.mc"
+import "drift_kernels.tppl"
 /*
  *  Host repertoire model (original implementation by Mariana Pires Braga)
  *  
@@ -84,9 +85,10 @@ model function mymodel(symbiont_tree: TreeLabeled, ntips: Int, nhosts: Int, inte
   host_distances: Real[], dMean: Real, tune: Real): ReturnType {
 
   // Set priors for model parameters
-  assume lambda ~ Dirichlet([1.0,1.0,1.0,1.0]) drift Dirichlet([1.0,1.0,1.0,1.0]); 
-  assume mu ~ Exponential(10.0) drift Exponential(10.0);
-  assume beta ~ Exponential(1.0) drift Exponential(1.0);
+  assume lambda ~ Dirichlet([1.0,1.0,1.0,1.0]) drift simplexMove(lambda, 10.); 
+  assume mu ~ Exponential(10.0) drift scaleMove(mu, 1.);
+  assume beta ~ Exponential(1.0) drift scaleMove(beta, 1.);
+
 
   // Set transition rate matrix for three-state independence model
   let r = mtxCreate(3,3,

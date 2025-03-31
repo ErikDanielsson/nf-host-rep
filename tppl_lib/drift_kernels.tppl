@@ -18,6 +18,16 @@ function simplexMove(x: Real[], alpha: Real) {
   return Dirichlet(new_params);
 }
 
+function stochSimplexMove(
+  x: Real[], weights: Real[], alphas: Real[]
+) {
+  /*
+   * Select a simplexMove stochastically 
+   */ 
+  assume i ~ Categorical(weights);
+  return simplexMove(x, alphas[addi(i)]);
+}
+
 function scaleMove(x: Real, lambda: Real) {
   /*
    * Drift kernel for distributions with support on positive real axis
@@ -34,3 +44,12 @@ function scaleMove(x: Real, lambda: Real) {
   return Reciprocal(x * exp(-lambda / 2.), x * exp(lambda / 2.));
 }
 
+function stochScaleMove(
+  x: Real, weights: Real[], lambdas: Real[]
+) {
+  /*
+   * Select a scaleMove stochastically 
+   */ 
+  assume i ~ Categorical(weights);
+  return scaleMove(x, lambda[addi(i)]);
+}
