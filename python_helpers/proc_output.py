@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import arviz as az
+import graphviz
 import xarray as xr
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -207,6 +208,152 @@ def read_tppl_file(fn, with_file=True, tempdir_suffix=""):
         df.to_csv(temp_fn)
 
     return df
+
+
+def get_json_tree_tppl(fn):
+    with open(fn) as fh:
+        parsed_file = json.load(fh)
+    tree_samples = [s["__data__"]["tree"] for s in parsed_file["samples"]]
+    return tree_samples
+
+
+def parse_tree(json_tree_samples):
+    def initial_tree(first_tree):
+        data = first_tree["__data__"]
+        if "right" in data:
+            return {
+                "label": str(data["label"]),
+                "age": data["age"],
+                "repertoire": [data["repertoire"]],
+                "right": initial_tree(data["right"]),
+                "left": initial_tree(data["left"]),
+            }
+        else:
+            return {
+                "label": str(data["label"]),
+                "age": data["age"],
+                "repertoire": [data["repertoire"]],
+            }
+
+    def append_repertoires(tree_sample, parsed_tree):
+        data = tree_sample["__data__"]
+        if "right" in parsed_tree:
+            left = parsed_tree["left"]
+            right = parsed_tree["right"]
+            parsed_tree["repertoire"].append(data["repertoire"])
+            append_repertoires(data["left"], left)
+            append_repertoires(data["right"], right)
+        else:
+            parsed_tree["repertoire"].append(data["repertoire"])
+
+    tree = initial_tree(json_tree_samples[0])
+    for tree_sample in json_tree_samples[1:]:
+        append_repertoires(tree_sample, tree)
+    return tree
+
+
+def tree_map(tree, func, inkeys, outkey):
+    if "right" in tree:
+        return {
+            outkey: func(*[tree[k] for k in inkeys]),
+            "right": tree_map(tree["right"], func, inkeys, outkey),
+            "left": tree_map(tree["left"], func, inkeys, outkey),
+            "label": tree["label"],
+            "age": tree["age"],
+        }
+    else:
+        return {
+            outkey: func(*[tree[k] for k in inkeys]),
+            "label": tree["label"],
+            "age": tree["age"],
+        }
+
+
+def tree_avg_rep(tree):
+    def rep_to_vec(vec, size=3):
+        nvec = np.array(vec)
+        return np.eye(size)[nvec]
+
+    def transform_rep_array(rep_array):
+        arr = np.array([rep_to_vec(r) for r in rep_array]).mean(axis=0)
+        return arr
+
+    return tree_map(tree, transform_rep_array, ["repertoire"], "avg_rep")
+
+
+heat_map_dir = Path(".heatmaps")
+
+
+def heat_tree(mat_tree, tempdir):
+
+    def mat_to_heatmap_file(mat, node_name):
+        filename = f"heatmap.{node_name}.png"
+        file_path = tempdir / filename
+        if not file_path.exists():
+            plt.figure(figsize=(2, 2), dpi=100)  # Fixed size and resolution
+            plt.imshow(mat.T, cmap="binary", aspect="auto")
+            # plt.axis("off")  # Hide axes
+            plt.xlabel("Host")
+            plt.ylabel("State")
+            plt.savefig(file_path, bbox_inches="tight", pad_inches=0)
+            plt.close()
+        return os.path.abspath(str(file_path))
+
+    return tree_map(mat_tree, mat_to_heatmap_file, ["avg_rep", "label"], "hmapfn")
+
+
+def create_dot_tree(tree, dot):
+    if "right" in tree:
+        dot.node(
+            tree["label"],
+            label="",
+            image=tree["hmapfn"],
+            shape="box",
+            width="1.2",
+            height="1.2",
+            imagescale="true",
+        )
+        dot.edge(tree["label"], str(tree["right"]["label"]))
+        dot.edge(tree["label"], str(tree["left"]["label"]))
+        create_dot_tree(tree["left"], dot)
+        create_dot_tree(tree["right"], dot)
+    else:
+        dot.node(
+            tree["label"],
+            label="",
+            image=tree["hmapfn"],
+            shape="box",
+            width="1.2",
+            height="1.2",
+            imagescale="true",
+        )
+
+
+def create_graphviz_tree_plot(json_tree, id, tempdir_suffix):
+    tempdir = get_temp_dir(tempdir_suffix)
+    file_path = tempdir / f"treeplot.{id}"
+    if not file_path.exists():
+        parsed_tree = parse_tree(json_tree)
+        mat_tree = tree_avg_rep(parsed_tree)
+        heat_map_tempdir = tempdir / f"heatmaps.{id}"
+        heat_map_tempdir.mkdir()
+        heat_map_tree = heat_tree(mat_tree, heat_map_tempdir)
+        dot = graphviz.Digraph()
+        create_dot_tree(heat_map_tree, dot)
+        print()
+        path = dot.render(file_path, format="png", view=True)
+        return path
+    else:
+        return f"{file_path}.png"
+
+
+def get_trees(df_fn):
+    df_fn = df_fn[df_fn["file_type"] == "tppl"]
+    df_fn = df_fn.reset_index()
+    df_fn["trees"] = [
+        get_json_tree_tppl(row["filename"]) for _, row in df_fn.iterrows()
+    ]
+    return df_fn
 
 
 def inference_data_from_dataframe(df, chain=0, burnin=0, subsample=1):
