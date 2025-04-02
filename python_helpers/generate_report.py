@@ -1,3 +1,6 @@
+from pathlib import Path
+import os
+
 preamble_str = """---
 title: "TreePPL host repertoire"
 format:
@@ -60,6 +63,7 @@ df, tppl_fns = proc_output.get_files_in_dir(
         "rb": proc_output.get_rb_output_pattern(),
     },
 )
+df_fn = df.copy()
 
 df = proc_output.create_inference_data_df(
     df,
@@ -178,6 +182,17 @@ fig.tight_layout()
 plt.show()
 """
 
+tppl_tree_plots_cell_template = """
+df_trees = proc_output.get_trees(df_fn)
+tree_plot_paths = []
+for i in df_trees.index:
+    tree_plot_path = proc_output.create_graphviz_tree_plot(
+        df_trees.loc[i, "trees"], i, RUN_NAME
+    )
+    tree_plot_paths.append(tree_plot_path)
+"""
+
+
 FIG_COUNTER = 0
 
 
@@ -214,11 +229,23 @@ def create_text(text_str, variables={}):
     return text_str
 
 
+def create_multi_fig(fig_name, images_and_captions):
+    start = f"::: {{#fig-{fig_name}-plots layout-ncol=2}}\n\n"
+    lines = [start]
+    for image_fn, caption in images_and_captions:
+        lines.append(
+            f"![{caption}]({Path(image_fn).relative_to(Path(os.getcwd()))})\n\n"
+        )
+    lines.append(":::\n")
+    return "".join(lines)
+
+
 def generate_report(run_name, burnin=0):
     # Set .gen.qmd as file ending so that we can remove
     # any automatically generated report files
     make_tppl_trace = True
     make_rb_trace = True
+    make_tppl_tree_plot = True
     ph_path_from_base_dir = "python_helpers/"
     ph_path_from_self = "."
     report_name = f"report_{run_name}.gen.qmd"
@@ -255,6 +282,10 @@ def generate_report(run_name, burnin=0):
                 create_multi_chain_tppl_cell_template,
                 {"___groupby_keys___": groupby_keys_tppl},
             ),
+            global_variables,
+        )
+        exec(
+            subst_variables(tppl_tree_plots_cell_template, {}),
             global_variables,
         )
         groupby_values_tppl = global_variables["reduced_df_tppl"].index
@@ -354,6 +385,20 @@ def generate_report(run_name, burnin=0):
                         },
                     )
                 )
+        if global_variables["has_tppl"] and make_tppl_tree_plot:
+            fh.write(
+                create_quarto_cell(
+                    tppl_tree_plots_cell_template,
+                    {},
+                )
+            )
+            tree_plot_paths = global_variables["tree_plot_paths"]
+            fh.write(
+                create_multi_fig(
+                    "tree_plots",
+                    zip(tree_plot_paths, tree_plot_paths),
+                )
+            )
         if global_variables["has_rb"]:
             fh.write(
                 create_text(
