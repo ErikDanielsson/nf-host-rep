@@ -389,7 +389,7 @@ function propose_events (host_index: Int, from_rep: HistoryPoint, to_rep: Histor
   if (gti(host_index, length(from_rep.repertoire))) {            
 		return ProposedHistory{log_debt = 0.0, events = [], success = true};       
 	}
-  // Use uniformization here instead -- no rejection sampling needed 
+  // Use uniformization here -- no rejection sampling needed 
   let propHist1 = proposeEventsUniformization(
     host_index,
     from_rep.age,
@@ -465,6 +465,7 @@ function proposeEventsUniformization(
     qMatrix, unifMatrix, nu, fromTime - toTime, fromState, toState
   );
   let nEvents = nEventsDebt.i;
+  let nEventsWeight = nEventsDebt.r; 
   /*
   printLn(join(["Min transitions ", int2string(minTransitions)]));
   print("N events: ");
@@ -472,7 +473,6 @@ function proposeEventsUniformization(
   print(" ");
   printLn(real2string(eventRate));
   */
-  let nEventsWeight = nEventsDebt.r; // minPoissonLogWeight(nEvents, minTransitions, eventRate);
 
   // Now we can sample the event times
   let eventTimesAndDebt = getEventTimes(nEvents, toTime, fromTime);
@@ -503,10 +503,13 @@ type IntReal = IntReal {
 function getNEvents(
   q: Matrix[Real], r: Matrix[Real], nu: Real, t: Real,a: Int, b: Int
 ): IntReal {
+  /*
+   * Sample the number of events conditional on the end state
+   */
   assume u ~ Uniform(0., 1.);
   let poissonProb = exp(-nu * t);
-  let mexp = mtxExp(mtxSclrMul(t, q));
-  let pab = mtxGet(incr(a), incr(b), mexp);
+  let mexp = mtxExp(mtxSclrMul(t, q)); 
+  let pab = mtxGet(incr(a), incr(b), mexp); // This corresponds to P[X(t) = b | X(0) = a]
   let accProb = poissonProb * bool2real(eqi(a, b)) / pab;
   if u < accProb {
     return IntReal { i = 0, r = log(accProb)};
@@ -543,8 +546,6 @@ function eventHelper(
     );
   }
 }
-
-
 
 // Accumuluates the event and event times without self transitions
 function createProposedHistory(
@@ -601,7 +602,7 @@ function getEventTimes(
     },
     unorderedEventTimes
   );
-  let logDebt = sortedUniformLogDebt(nEvents, startTime, endTime);
+  let logDebt = sortedUniformLogDebt2(nEvents, startTime, endTime);
   return UBranchEventTimesAndDebt{ eventTimes = eventTimes, logDebt = logDebt };
 }
 
@@ -616,7 +617,7 @@ function sampleEventTimes(
   }
 } 
 
-// This will compute the log likelilihood of sampling nEvents sorted uniform variables on the given interval
+// This will compute the log likelihood of sampling nEvents sorted uniform variables on the given interval
 // The pdf is 1/n! 1 / (b - a)^n I_{[a, b]^n}(x) -- the factorial comes from sorting the array
 function sortedUniformLogDebt(
   nEvents: Int, startTime: Real, endTime: Real
@@ -631,6 +632,21 @@ function sortedUniformLogDebt(
     );
 
   }
+}
+
+// This will compute the log likelihood of sampling nEvents sorted uniform variables on the given interval
+// The pdf is 1/n! 1 / (b - a)^n I_{[a, b]^n}(x) -- the factorial comes from sorting the array
+function sortedUniformLogDebt2(
+  nEvents: Int, startTime: Real, endTime: Real
+): Real {
+  let intLength = endTime - startTime;
+  return - int2real(nEvents) * log(intLength) - fold(
+    function (acc: Real, n: Int) {
+      return acc + log(int2real(n));
+    },
+    0.0,
+    range(1, incr(nEvents), 1)
+  );
 }
 
 // FB-algorithm for sampling Markov chain conditioned on start and end states
@@ -667,15 +683,15 @@ function backwardsMessages(
 function backwardsMsgs(
   mat: Matrix[Real], endMsg: Matrix[Real], n: Int
 ) : Matrix[Real][] {
-  fold(
-    function (i: Int, matSeq: Matrix[Real][]) {
+  return fold(
+    function (matSeq: Matrix[Real][], i: Int) {
       let last = matSeq[length(matSeq)];
       let next = mtxMul(last, mat);
       return append(matSeq, next);
     },
     [endMsg],
     range(0, n, 1)
-  )
+  );
 }
 
 // Sample the markov chain forwards in time, using the information about the end state in the backwards messages

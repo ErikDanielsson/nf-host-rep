@@ -1,10 +1,10 @@
 import "stdlib::seq.mc"
+import "mat_lib.mc"
 /*
  *  Host repertoire model with full rejection sampling
  *  
- * This file extends what we do in host_rep_rejection_simple.tppl with checking
- * whether all repertoires are valid along a branch *before* running the
- * full model
+ * Uniformization along branches instead of rejection sampline.
+ * It adjusts for repertoire along branches with rejection sampling
  *
  */ 
 /*---------------------------- TYPES --------------------------------*/
@@ -17,7 +17,7 @@ type TreeLabeled =
 /*-------------------- Model-specific types -------------------------*/
 
 type ModelParams = 
-  ModelParams{qMatrix: Matrix[Real], dMatrix: Matrix[Real], dMean: Real, beta: Real}
+  ModelParams{qMatrix: Matrix[Real], dMatrix: Matrix[Real], dMean: Real, beta: Real, mu: Real}
 
 // Tree decorated with postorder messages from belief propagation.
 // Postorder = backwards in time
@@ -57,6 +57,35 @@ type HistoryTree =
 // Type used to hold the character histories and parameter values to be outputed
 type ReturnType = ReturnType{tree: HistoryTree, lambda: Real[], mu: Real, beta: Real}
 
+// Types for uniformization
+
+type UBranchEventsAndDebt = UBranchEventsAndDebt {
+  events: Int[],
+  logDebt: Real
+}
+
+type UBranchEventTimesAndDebt = UBranchEventTimesAndDebt {
+  eventTimes: Real[],
+  logDebt: Real
+}
+
+type UEvent = UEvent {
+  event: Int,
+  eventTime: Real
+}
+
+type UBranchHistory = UBranchHistory {
+  events: Int[],
+  eventTimes: Real[]
+}
+
+type UBranchHistoryAndDebt = UBranchHistoryAndDebt {
+  events: Int[],
+  eventTimes: Real[],
+  logDebt: Real
+}
+
+
 /*
  *  Model
  *
@@ -75,10 +104,9 @@ type ReturnType = ReturnType{tree: HistoryTree, lambda: Real[], mu: Real, beta: 
 
 model function mymodel(symbiont_tree: TreeLabeled, ntips: Int, nhosts: Int, interactions: Int[],
   host_distances: Real[], dMean: Real, tune: Real): ReturnType {
-
   // Set priors for model parameters
   assume lambda ~ Dirichlet([1.0,1.0,1.0,1.0]) drift Dirichlet([1.0,1.0,1.0,1.0]); 
-  assume mu ~ Exponential(10.0) drift Exponential(10.0);
+  assume mu ~ Exponential(10.) drift Exponential(10.);
   assume beta ~ Exponential(1.0) drift Exponential(1.0);
 
   // Set transition rate matrix for three-state independence model
@@ -95,7 +123,7 @@ model function mymodel(symbiont_tree: TreeLabeled, ntips: Int, nhosts: Int, inte
   let dMatrix = mtxCreate(nhosts, nhosts, host_distances);
 
   // Package model parameters into an object for convenient calling
-  let mp = ModelParams{qMatrix = qMatrix, dMatrix = dMatrix, dMean = dMean, beta = beta};
+  let mp = ModelParams{qMatrix = qMatrix, dMatrix = dMatrix, dMean = dMean, beta = beta, mu = mu};
 
   let interactions_reals = sint2real(interactions);
   let iMatrix = mtxCreate(ntips, nhosts, interactions_reals);
@@ -132,7 +160,7 @@ model function mymodel(symbiont_tree: TreeLabeled, ntips: Int, nhosts: Int, inte
 
   // Factor in the net debt of the proposed ancestral repertoires 
   // at nodes and leaves in the historyTree
-  logWeight( -get_rep_debt(historyTree) );
+  weight 1.0;
   
   // Return symbiont tree with simulated character history and parameter values
   return ReturnType{tree = historyTree, lambda = lambda, mu = mu, beta = beta};
@@ -254,16 +282,21 @@ function final_probs(tree: MsgTree, parent_msg: Matrix[Real][], qMatrix: Matrix[
 function simulate (tree: ProbsTree, start: HistoryPoint, mp: ModelParams, iMatrix: Matrix[Real]) : HistoryTree {
     
   let probRecordSequence = sapply(tree.probs, createProbRecord);
-  let repertoire = suggest_repertoire_with_RS(probRecordSequence);
+  
+  let repertoire = suggestRepertoireWithRS(probRecordSequence);
+  //printLn("Suggested repertoire");
   let log_rep_debt = seqSumReal(zipWith(categoricalLogScore, repertoire, probRecordSequence)); 
+  //printLn("Computed debt");
   // Propose a repertoire. The propose mechanism means that the simulation
   // should be "penalized" for the probability associated with the draw. 
   let probs = getProbs(tree);  // TODO: is this needed?
   let probRecordSequence = sapply(tree.probs, createProbRecord);
-  
 
+  //printLn("Before get age");
 	let stop = HistoryPoint{age = getProbsTreeAge(tree), repertoire = repertoire};
-	let history = simulate_history(start, stop, mp);
+  // printLn("Before simulated history");
+	let history = simulate_history(0, 100, start, stop, mp);
+  // printLn("After simulated history");
   
 	if tree is ProbsLeaf {
 
@@ -286,14 +319,14 @@ function simulate (tree: ProbsTree, start: HistoryPoint, mp: ModelParams, iMatri
 }
 
 // Suggest valid repertoire based on rejection sampling
-function suggest_repertoire_with_RS(probRecordSequence: CategoricalParam[]): Int[] {
+function suggestRepertoireWithRS(probRecordSequence: CategoricalParam[]): Int[] {
   // Note: categorical works here because repertoire id 0-based
   let repertoire = sapply(probRecordSequence, dk_categorical);      // Note: assume is within function categorical
   if any(is2, repertoire) {
     // The repertoire is valid, return it! 
     return repertoire;
   } else {
-    return suggest_repertoire_with_RS(probRecordSequence);
+    return suggestRepertoireWithRS(probRecordSequence);
   }
 }
 
@@ -305,32 +338,49 @@ function dk_categorical(param: CategoricalParam) {
 // Simulate history conditional on initial repertoire, start time, and end
 // time. We first propose events from the independence model and then
 // condition the simulation on those events.
-function simulate_history (from_rep: HistoryPoint, to_rep: HistoryPoint, mp: ModelParams) : HistoryPoint[] {
+function simulate_history(it: Int, max_reject: Int, from_rep: HistoryPoint, to_rep: HistoryPoint, mp: ModelParams) : HistoryPoint[] {
 
+  //printLn("In simualte history");
+  if (eqi(it, max_reject)) {
+    //print("Max reject,");
+    //printLn(real2string(mp.mu));
+    weight 0.0;
+    resample;
+  }
+  //printLn("Before propose");
   let proposed_unordered_events = propose_events(1, from_rep, to_rep, mp.qMatrix);
   print("LogDebt,");
   printLn(real2string(proposed_unordered_events.log_debt));
+  // printLn("Finished propose");
   // order events by decreasing age
+  // printLn("Before sort");
 	let eventSeq = qSort(subAge, proposed_unordered_events.events);
+  //printEventSeq(eventSeq);
   // Check if the repertoire has at least one 2 at all time points
-  if all_times_valid_rep(from_rep.repertoire, proposed_unordered_events, eventSeq, 1) {
+  // printLn("Before all times valid rep");
+  // printProposedHistory(proposed_unordered_events);
+  // printEventSeq(eventSeq);
+  if all_times_valid_rep(from_rep.repertoire, proposed_unordered_events, eventSeq, 1) || eqi(it, max_reject) {
 
     // Simulate repertoire evolution from full model, one event at a time
-    // printLn("Valid reperotoire");
+    //print("Valid,");
+    //printLn(real2string(mp.mu));
     let history_score = simulate_by_event(from_rep.repertoire, eventSeq, 1, from_rep.age, 
       to_rep.age, mp, proposed_unordered_events.log_debt);
     
     // Now we have both debt and score at an alignment point 
-    logWeight(history_score.log_score - proposed_unordered_events.log_debt); 
+    // logWeight(history_score.log_score - proposed_unordered_events.log_debt); 
 
     return history_score.history;
   } else {
     // We failed to find a repertoire that satisfied the "one host at all times"
     // requirement, so we reject the proposal and resample the repertoire
-    // printLn("Invalid reperotoire, rejecting");
-    return simulate_history(from_rep, to_rep, mp);
+    //print("Invalid,");
+    //printLn(real2string(mp.mu));
+    return simulate_history(addi(it, 1), max_reject, from_rep, to_rep, mp);
   }
 }
+
 
 // Propose events from independence model
 function propose_events (host_index: Int, from_rep: HistoryPoint, to_rep: HistoryPoint, qMatrix: Matrix[Real]) : ProposedHistory {
@@ -339,10 +389,16 @@ function propose_events (host_index: Int, from_rep: HistoryPoint, to_rep: Histor
   if (gti(host_index, length(from_rep.repertoire))) {            
 		return ProposedHistory{log_debt = 0.0, events = [], success = true};       
 	}
-  // Here we do rejection sampling
-  let propHist1 = propose_events_for_host(host_index, from_rep.age, to_rep.age, 
-		from_rep.repertoire[host_index], to_rep.repertoire[host_index], qMatrix);
-
+  // Use uniformization here -- no rejection sampling needed 
+  let propHist1 = proposeEventsUniformization(
+    host_index,
+    from_rep.age,
+    to_rep.age, 
+		from_rep.repertoire[host_index],
+    to_rep.repertoire[host_index],
+    qMatrix
+  );
+  // printProposedHistory(propHist1);
   // Now check if we succeeded in reaching the right end state
   if (propHist1.success) {
     // We succeeded in finding a repertoire, so we can move to the next host!  
@@ -355,105 +411,339 @@ function propose_events (host_index: Int, from_rep: HistoryPoint, to_rep: Histor
   } else {
     // We failed to find a repertoire that ended in the correct state, 
     // so we must sample again
-    return propose_events(host_index, from_rep, to_rep, qMatrix);
+    return error("We should never be here!!!!!!!");
   }
 }
 
-// Propose events for one host
-function propose_events_for_host (host_index: Int, from_age: Real, end_age: Real,
-	from_state: Int, end_state: Int, qMatrix: Matrix[Real]) : ProposedHistory {
-		
-	let rate = -(mtxGet(addi(from_state,1), addi(from_state,1), qMatrix));
-  
- // We want to reject the sample if it didn't reach the end state in close enough time
-  if (rate * (from_age - end_age) < 1E-15 && !eqi(from_state,end_state)) {
-    // We return false, so the values will not be used
-    return ProposedHistory{log_debt = 0.0, events = [], success = false};
-  }
+/*
+ *  UNIFORMIZATION FUNCTIONS START HERE
+ */
+function proposeEventsUniformization(
+  hostIndex: Int,
+  fromTime: Real,
+  toTime: Real,
+  fromState: Int,
+  toState: Int,
+  qMatrix: Matrix[Real]
+): ProposedHistory {
+  // Compute the Poisson rate the uniformization matrix
+  // The rate is the maximal rate -- checking diagonal would suffice, but this is simpler in tppl
+  let nu = -mtxFold(minf, 0.0, qMatrix);
+  // The uniformization matrix is Q / nu + I, which is a Markov matrix
+  let unifMatrix = mtxAdd(
+    mtxSclrMul(1.0 / nu, qMatrix),
+    mtxCreateId(dim(qMatrix)[1])
+  );
+  /*
+  printLn("Uniformization between");
+  printLn(int2string(fromState));
+  printLn(int2string(toState));
+  printLn("With uMatrix");
+  printMtx(unifMatrix);
+  */  
 
-  let t = getWaitingTime(from_state, end_state, rate, from_age, end_age);
-	let new_age = from_age - t;
-
-	// Calculate debt. Note the special case for the last time segment
-	// with no events. We use the average weight of all particles with
-	// this outcome, which should be advantageous for inference
-	// efficiency. It also saves us from storing the actual draw.
-	if (new_age < end_age) {
-		let log_wait_debt = poissonLogScore(0, PoissonParam{rate = rate*(from_age - end_age)});
-		return ProposedHistory{log_debt = log_wait_debt, events = [], success = true};
-	}
-
-  let log_wait_debt = getLogWaitDebt(from_state, end_state, rate, from_age, end_age, t);
-	let to_states = getToStates(from_state); 
-	let state_probs = seqNormalize([mtxGet(addi(from_state,1), addi(to_states[1],1), qMatrix),
-																	mtxGet(addi(from_state,1), addi(to_states[2],1), qMatrix)]);
-	
-	assume new_state_pos ~ Categorical(state_probs) drift Categorical(state_probs);
-	let new_state = to_states[addi(new_state_pos, 1)];
-  // Note: Categorical is 0-based, so we need to add 1 do get the correct position
-	let log_event_debt = categoricalLogScore(new_state_pos, CategoricalParam{probs = state_probs}); 
-  // Note: Use position instead of value
-
-	let event = Event{age = new_age, host = host_index, from_state = from_state, to_state = new_state};
-	let propHist = propose_events_for_host(host_index, new_age, end_age, new_state, end_state, qMatrix);
-
-  // We need to propagate the success parameter backwards in time
-  // In this implementation we save the full history but just set the success parameter false if it failed at all
-	return ProposedHistory{
-    log_debt = log_wait_debt+log_event_debt + propHist.log_debt,
-    events = join([[event], propHist.events]),
-    success = propHist.success
+  // Compute the minimal number of events needed for the chain to be valid
+  // This is the absolute difference between the start and end states minus 1
+  let absi = function (v: Int) {
+    if (gti(v, 0)) { return v;  } else { return subi(0, v); }
   };
+  let minTransitions = maxi(
+    subi(
+      absi(
+        subi(
+          fromState, toState
+        )
+      ),
+      1
+    ),
+    0
+  );
 
+  // Sample from a Poisson, conditioned on the minimal number of events
+  let eventRate = nu * (fromTime - toTime);
+  let nEventsDebt = getNEvents(
+    qMatrix, unifMatrix, nu, fromTime - toTime, fromState, toState
+  );
+  let nEvents = nEventsDebt.i;
+  let nEventsWeight = nEventsDebt.r; 
+  /*
+  printLn(join(["Min transitions ", int2string(minTransitions)]));
+  print("N events: ");
+  print(int2string(nEvents));
+  print(" ");
+  printLn(real2string(eventRate));
+  */
+
+  // Now we can sample the event times
+  let eventTimesAndDebt = getEventTimes(nEvents, toTime, fromTime);
+  
+  // Sample the transition chain -- this will be conditioned on both the start and end state
+  let res = forwardsBackardsAlgorithm(unifMatrix, fromState, toState, nEvents);
+  let events = join([[fromState], res.events, [toState]]);
+  let eventTimes = join([[fromTime], eventTimesAndDebt.eventTimes, [toTime]]);
+
+  let totalLogDebt = nEventsWeight + res.logDebt + eventTimesAndDebt.logDebt;
+  // Remove self transitions from the sampled chain and return it
+  return createProposedHistory(
+    zipWith(
+      function (e: Int, eT: Real) { return UEvent { event = e, eventTime = eT }; },
+      events,
+      eventTimes
+    ),
+    totalLogDebt,
+    hostIndex
+  );
 }
 
-function getLogWaitDebt(from_state: Int, end_state: Int, rate: Real, from_age: Real, end_age: Real, t: Real): Real {
-	if (!eqi(from_state,end_state)) {
-		return log_pdf_exponential_max_t(t, rate, from_age - end_age);
-	} else {
-		return exponentialLogScore(t, ExponentialParam{rate = rate}); 
-	}
+type IntReal = IntReal {
+  i: Int,
+  r: Real
 }
 
-function getWaitingTime(from_state: Int, end_state: Int, rate: Real, from_age: Real, end_age: Real): Real {
-	if (!eqi(from_state,end_state)) {
-		return sample_exponential_max_t(rate, from_age - end_age);
-	} else {
-		assume t ~ Exponential(rate) drift Exponential(rate);
-    return t;
-	}
+function getNEvents(
+  q: Matrix[Real], r: Matrix[Real], nu: Real, t: Real,a: Int, b: Int
+): IntReal {
+  /*
+   * Sample the number of events conditional on the end state
+   */
+  assume u ~ Uniform(0., 1.);
+  let poissonProb = exp(-nu * t);
+  let mexp = mtxExp(mtxSclrMul(t, q)); 
+  let pab = mtxGet(incr(a), incr(b), mexp); // This corresponds to P[X(t) = b | X(0) = a]
+  let accProb = poissonProb * bool2real(eqi(a, b)) / pab;
+  if u < accProb {
+    return IntReal { i = 0, r = log(accProb)};
+  } else {
+    let n = dim(q)[1];
+    let probs = mtxRowKroneckerDelta(incr(a), n);
+    return eventHelper(u, 1, r, nu, t, b, pab, probs, poissonProb, accProb);
+  }
 }
 
-function getToStates(state: Int): Int[] { 
-	if (Real(state) == 0.0) {
-		return [1,2];
-	} else {
-		if (Real(state) == 1.0) {
-			return [0,2];
-		} else {
-			if (Real(state) == 2.0) {
-				return [0,1];
-			} else {
-        return error("Invalid state");
+
+function eventHelper(
+  u: Real,
+  n: Int,
+  r: Matrix[Real],
+  nu: Real,
+  t: Real,
+  b: Int,
+  pab: Real,
+  prevRa: Matrix[Real],
+  prevVal: Real,
+  accProb: Real
+): IntReal {
+  let newRa = mtxMul(prevRa, r);
+  let rab = mtxGet(1, incr(b), newRa);
+  let newVal = prevVal * nu * t / int2real(n);
+  let newProb = newVal * rab / pab;
+  let newAccProb = accProb + newProb;
+  if u < newAccProb {
+    return IntReal { i = n, r = log(newProb) };
+  } else {
+    return eventHelper(
+      u, incr(n), r, nu, t, b, pab, newRa, newVal, newAccProb
+    );
+  }
+}
+
+// Accumuluates the event and event times without self transitions
+function createProposedHistory(
+  events: UEvent[], logDebt: Real, hostIndex: Int
+): ProposedHistory {
+  if gti(2, length(events)) {
+    error("We should always have two events -- the start and end events");
+    return ProposedHistory { log_debt = logDebt, events = [], success = false};
+  } else {
+    let eventSeq = fold(
+      function (acc: Event[], i: Int) {
+        let fromEvent = events[subi(i, 1)];
+        let toEvent = events[i];
+        if !eqi(fromEvent.event, toEvent.event) {
+          return join(
+            [
+              acc,
+              [
+                Event {
+                  age = toEvent.eventTime,
+                  host = hostIndex,
+                  from_state = fromEvent.event,
+                  to_state = toEvent.event
+                }
+              ]
+            ]
+          );
+        } else {
+          return acc;
+        }
+      },
+      [],
+      range(2, addi(length(events), 1), 1)
+    );
+    return ProposedHistory { 
+      log_debt = logDebt,
+      events = eventSeq,
+      success = true  
+    };
+  }
+}
+
+function getEventTimes(
+  nEvents: Int, startTime: Real, endTime: Real
+): UBranchEventTimesAndDebt {
+  let unorderedEventTimes = sampleEventTimes(nEvents, startTime, endTime);
+  let eventTimes = qSort(
+    function (time1: Real, time2: Real ) {
+      if (time1 < time2) {
+        return 1;
+      } else {
+        return subi(0, 1);
       }
-		}
-	}
+    },
+    unorderedEventTimes
+  );
+  let logDebt = sortedUniformLogDebt2(nEvents, startTime, endTime);
+  return UBranchEventTimesAndDebt{ eventTimes = eventTimes, logDebt = logDebt };
 }
 
-// Sample from truncated exponential distribution with rate 'rate'
-// but with support only on (0, max_t).
-function sample_exponential_max_t(rate: Real, max_t: Real) : Real {
-  let u_min = exp (-(rate * max_t));
-  assume u ~ Uniform(u_min, 1.0) drift Uniform(u_min, 1.0);
-  return ((-(log(u))) / rate);
+function sampleEventTimes(
+  nEvents: Int, startTime: Real, endTime: Real
+): Real[] {
+  if (eqi(nEvents, 0)) {
+    return [];
+  } else {
+    assume e ~ Uniform(startTime, endTime) drift Uniform(startTime, endTime);
+    return join([[e], sampleEventTimes(subi(nEvents, 1), startTime, endTime)]);
+  }
+} 
+
+// This will compute the log likelihood of sampling nEvents sorted uniform variables on the given interval
+// The pdf is 1/n! 1 / (b - a)^n I_{[a, b]^n}(x) -- the factorial comes from sorting the array
+function sortedUniformLogDebt(
+  nEvents: Int, startTime: Real, endTime: Real
+): Real {
+  if (eqi(nEvents, 0)) {
+    return 0.0;
+  } else {
+    let intLength = endTime - startTime;
+    return (
+      -(log(intLength) + log(int2real(nEvents)))
+      + sortedUniformLogDebt(subi(nEvents, 1), startTime, endTime)
+    );
+
+  }
 }
 
-// Compute log PDF for a value from the truncated exponential
-// The truncation multiplies the pdf with 1/(1-u_min).
-function log_pdf_exponential_max_t(value : Real, rate: Real, max_t: Real) : Real {
-	let u_min = exp(-(rate * max_t));
-  return log(rate) - rate * value - log(1.0-u_min); 
+// This will compute the log likelihood of sampling nEvents sorted uniform variables on the given interval
+// The pdf is 1/n! 1 / (b - a)^n I_{[a, b]^n}(x) -- the factorial comes from sorting the array
+function sortedUniformLogDebt2(
+  nEvents: Int, startTime: Real, endTime: Real
+): Real {
+  let intLength = endTime - startTime;
+  return - int2real(nEvents) * log(intLength) - fold(
+    function (acc: Real, n: Int) {
+      return acc + log(int2real(n));
+    },
+    0.0,
+    range(1, incr(nEvents), 1)
+  );
 }
+
+// FB-algorithm for sampling Markov chain conditioned on start and end states
+function forwardsBackardsAlgorithm(
+  kernel: Matrix[Real], startIndex: Int, endIndex: Int, nEvents: Int
+): UBranchEventsAndDebt {
+    // Compute the backwards messages
+    let backwardsKernel = mtxTrans(kernel);
+    let backwardMsgs = backwardsMessages(
+      nEvents,
+      backwardsKernel,
+      mtxGetRow(addi(endIndex, 1), backwardsKernel) // We compute the first message outside the function
+    );
+    // Sample the chain forwards in time
+    let samples = sampleForwards(0, kernel, startIndex, backwardMsgs, nEvents);
+    return samples;
+}
+
+// Compute backward messages -- they propagate the information from the end state
+function backwardsMessages(
+  i: Int, mat: Matrix[Real], curr: Matrix[Real]
+) : Matrix[Real][] {
+    if (eqi(i, 0)) {
+      return [];
+    } else {
+      let next = mtxMul(curr, mat);
+      return join(
+        [[curr], backwardsMessages(subi(i, 1), mat, next)]
+      );
+    }
+}
+
+// Compute backwards messages 
+function backwardsMsgs(
+  mat: Matrix[Real], endMsg: Matrix[Real], n: Int
+) : Matrix[Real][] {
+  return fold(
+    function (matSeq: Matrix[Real][], i: Int) {
+      let last = matSeq[length(matSeq)];
+      let next = mtxMul(last, mat);
+      return append(matSeq, next);
+    },
+    [endMsg],
+    range(0, n, 1)
+  );
+}
+
+// Sample the markov chain forwards in time, using the information about the end state in the backwards messages
+function sampleForwards(
+  i: Int,
+  kernel: Matrix[Real],
+  prevI: Int,
+  backwardMsgs: Matrix[Real][],
+  nEvents: Int
+): UBranchEventsAndDebt {
+  if (eqi(i, nEvents)) {
+    return UBranchEventsAndDebt{ events = [], logDebt = 0.0};
+  } else {
+    let forward = mtxGetRow(addi(prevI, 1), kernel); // The forward transition probabilities is just the correct row vector of the kernel
+    let backward = backwardMsgs[subi(nEvents, i)]; // Get the backward transition probabilities 
+    let totMsg = mtxNormalize(
+      mtxTrans(
+        mtxElemMul(forward, backward)
+      )
+    );  // Compute the full messsage -- `normalizeVector` does not work on row-vectors, so transpose
+    let stateProbs = rowMatrixToSeq(totMsg);
+    // printLn(join(["Sampling event ", int2string(i)]));
+    // printSeqFloat(stateProbs);
+    //printLn("Sample forwards: Before categorical");
+    //printSeqFloat(stateProbs);
+    assume sample ~ Categorical(stateProbs) drift Categorical(stateProbs); // Sample the next state
+    //printLn("Sample forwards: After categorical");
+    // printLn(join(["Sampled state ", int2string(sample)]));
+    let currDebt = categoricalLogScore(sample, CategoricalParam {probs = stateProbs});
+    // Go to the next state in the chain.
+    let nextStep = sampleForwards(addi(i, 1), kernel, sample, backwardMsgs, nEvents);
+    // It would be more natural to use "cons" here, but it seems to be outside the scope of TreePPL
+    return UBranchEventsAndDebt{
+      events = join([[sample], nextStep.events]),
+      logDebt = currDebt + nextStep.logDebt
+    };
+  }
+}
+
+function rowMatrixToSeq(mat: Matrix[Real]) {
+  let size = dim(mat)[1];
+  return sapply(
+    range(1, addi(size, 1), 1),
+    function (i: Int) {
+      return mtxGet(i, 1, mat);
+    }
+  );
+}
+/*
+ *  UNIFORMIZATION FUNCTIONS END HERE
+ */
+
 
 // Simulate repertoire evolution from full model, one event
 // at a time. We return the sequence of repertoires. We
@@ -508,7 +798,9 @@ function getRate (repertoire: Int[], host_index: Int, to_state: Int, mp: ModelPa
     // However, we add a check here for the time being
     let n2s = fold(count2s, 0, repertoire);
     if (eqi(from_state, 2) && eqi(n2s, 1)) {
-      error("INVALID REPERTOIRE; THIS SHOULD HAVE BEEN CAUGHT BEFORE!");
+      //printLn("INVALID REPERTOIRE; THIS SHOULD HAVE BEEN CAUGHT BEFORE!");
+      weight 0.0;
+      return 0.0;
     }
     return base_rate;
   } else {
@@ -632,7 +924,8 @@ function stationaryProbs(lambda: Real[]): Matrix[Real] {
   let pi_2 = 1.0 - pi_0 - pi_1;
   return rvecCreate(3, [pi_0, pi_1, pi_2]);
 }
-  
+
+// Comment (Erik 07-03-2025): The functions below should most likely be replaced by anonymnous functions
 function getMsgTreeAge(tree: MsgTree) : Real {
 	return tree.age;
 }
@@ -688,4 +981,91 @@ function is1or2(x: Int): Bool {
   } else {
 			return false;
 	}
+}
+
+/*
+ * Extra printing function 
+ */
+function printSeqMat(seq: Matrix[Real][]): () {
+    printLn("Matrix sequence");
+    printSeqMatHelper(seq, 1, length(seq));
+}
+
+function printSeqMatHelper(seq: Matrix[Real][], i: Int, n: Int): () {
+    if (eqi(i, n)) {
+        printMtx(seq[i]);
+    } else {
+        printMtx(seq[i]);
+        print(", ");
+        printSeqMatHelper(seq, addi(i, 1), n);
+    }
+}
+
+function printSeqInt(seq: Int[]): () {
+    print("[");
+    printSeqIntHelper(seq, 1, length(seq));
+    printLn("]");
+}
+
+function printSeqIntHelper(seq: Int[], i: Int, n: Int): () {
+    if (eqi(i, n)) {
+        print(int2string(seq[i]));
+    } else {
+        print(int2string(seq[i]));
+        print(", ");
+        printSeqIntHelper(seq, addi(i, 1), n);
+    }
+}
+
+function printSeqFloat(seq: Real[]): () {
+    print("[");
+    printSeqFloatHelper(seq, 1, length(seq));
+    printLn("]");
+}
+
+function printSeqFloatHelper(seq: Real[], i: Int, n: Int): () {
+    if (eqi(i, n)) {
+        print(real2string(seq[i]));
+    } else {
+        print(real2string(seq[i]));
+        print(", ");
+        printSeqFloatHelper(seq, addi(i, 1), n);
+    }
+}
+
+function printProposedHistory(pHist: ProposedHistory) {
+  printLn(join([
+    "ProposedHistory with debt ",
+    real2string(pHist.log_debt)
+  ]));
+  printLn(join(["Events: [", eventSeqStr(1, pHist.events), "]"]));
+}
+function printEventSeq(events: Event[]) {
+  printLn(join(["Events: [", eventSeqStr(1, events), "]"]));
+}
+function eventSeqStr(i: Int, events: Event[]) {
+  if (eqi(length(events), 0)) {
+    return "";
+  }
+  let getEventStr = function (event: Event) {
+    return join(
+      [
+        "(",
+        int2string(event.host),
+        ": ",
+        int2string(event.from_state),
+        "->",
+        int2string(event.to_state),
+        ", ",
+        real2string(event.age),
+        ")"
+      ]
+    );
+  };
+  if (eqi(i, length(events))) {
+    return getEventStr(events[i]);
+  } else {
+    let eventStr = getEventStr(events[i]);
+    return join([eventStr, ", ", eventSeqStr(addi(i, 1), events)]);
+  }
 }
