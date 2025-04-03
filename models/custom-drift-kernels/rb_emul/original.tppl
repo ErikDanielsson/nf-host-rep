@@ -85,12 +85,12 @@ model function mymodel(symbiont_tree: TreeLabeled, ntips: Int, nhosts: Int, inte
   host_distances: Real[], dMean: Real, tune: Real): ReturnType {
 
   // Set priors for model parameters
-  assume lambda ~ Dirichlet([1.0,1.0,1.0,1.0]) drift stochSimplexMove(
+  assume lambda ~ Dirichlet([1.0,1.0,1.0,1.0]) drift simplexMove(lambda, 10.);/*stochSimplexMove(
     lambda, [2. / 7., 5. / 7.], [10., 25.]
-  ); 
-  assume mu ~ Exponential(10.0) drift stochScaleMove(
+  );*/
+  assume mu ~ Exponential(10.0) drift scaleMove(mu, 1.); /*stochScaleMove(
     mu, [2. / 7., 5. / 7.], [1., 0.2]
-  );
+  );*/
   assume beta ~ Exponential(1.0) drift scaleMove(beta, 1.);
 
 

@@ -25,7 +25,7 @@ function stochSimplexMove(
    * Select a simplexMove stochastically 
    */ 
   assume i ~ Categorical(weights);
-  return simplexMove(x, alphas[addi(i)]);
+  return simplexMove(x, alphas[addi(i, 1)]);
 }
 
 function scaleMove(x: Real, lambda: Real) {
@@ -51,5 +51,5 @@ function stochScaleMove(
    * Select a scaleMove stochastically 
    */ 
   assume i ~ Categorical(weights);
-  return scaleMove(x, lambda[addi(i)]);
+  return scaleMove(x, lambdas[addi(i, 1)]);
 }

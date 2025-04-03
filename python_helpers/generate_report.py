@@ -68,7 +68,7 @@ df_fn = df.copy()
 df = proc_output.create_inference_data_df(
     df,
     {
-        "tppl": lambda fn: proc_output.read_tppl_file(
+        "tppl": lambda fn: proc_output.___tppl_file_reader___(
             fn, with_file=CACHE, tempdir_suffix=RUN_NAME
         ),
         "rb": lambda fn: proc_output.read_rb_file(
@@ -245,7 +245,8 @@ def generate_report(run_name, burnin=0):
     # any automatically generated report files
     make_tppl_trace = True
     make_rb_trace = True
-    make_tppl_tree_plot = True
+    make_tppl_tree_plot = False
+    incremental = True
     ph_path_from_base_dir = "python_helpers/"
     ph_path_from_self = "."
     report_name = f"report_{run_name}.gen.qmd"
@@ -268,7 +269,12 @@ def generate_report(run_name, burnin=0):
     exec(
         subst_variables(
             read_outputs_cell_template,
-            {"___burnin___": burnin},
+            {
+                "___burnin___": burnin,
+                "___tppl_file_reader___": (
+                    "read_tppl_incremental_file" if incremental else "read_tppl_file"
+                ),
+            },
         ),
         global_variables,
     )
@@ -284,10 +290,11 @@ def generate_report(run_name, burnin=0):
             ),
             global_variables,
         )
-        exec(
-            subst_variables(tppl_tree_plots_cell_template, {}),
-            global_variables,
-        )
+        if make_tppl_tree_plot:
+            exec(
+                subst_variables(tppl_tree_plots_cell_template, {}),
+                global_variables,
+            )
         groupby_values_tppl = global_variables["reduced_df_tppl"].index
     if global_variables["has_rb"]:
         exec(
@@ -314,7 +321,14 @@ def generate_report(run_name, burnin=0):
         fh.write(
             create_quarto_cell(
                 read_outputs_cell_template,
-                {"___burnin___": burnin},
+                {
+                    "___burnin___": burnin,
+                    "___tppl_file_reader___": (
+                        "read_tppl_incremental_file"
+                        if incremental
+                        else "read_tppl_file"
+                    ),
+                },
             )
         )
         if global_variables["has_tppl"]:

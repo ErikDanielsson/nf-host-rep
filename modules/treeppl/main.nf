@@ -5,6 +5,7 @@ process compile_model {
     input:
         tuple val(compile_id), val(runid), val(model_dir), val(model_key), path(model_path), val(inference_flags)
         path(lib_path)
+        val(niter)
 
     output:
         tuple val(compile_id), path("${model_dir}.${model_key}.${compile_id}.bin"), emit: hostrep_bin
@@ -14,6 +15,7 @@ process compile_model {
     """
     tpplc ${model_path} \
         --output ${out_fn} \
+        --particles ${niter} \
         --seed ${runid} \
         ${inference_flags}
     chmod +x ${out_fn}

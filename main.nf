@@ -114,7 +114,7 @@ workflow {
                 cid, rid, md, mn, flags ->
                 [cid, rid, md, mn, "$baseDir/models/${params.version_model_dir}/${md}/${mn}.tppl", flags]
             }
-        compile_model(compile_in_ch, tppl_lib_ch)
+        compile_model(compile_in_ch, tppl_lib_ch, niter)
 
         // Create the in file channel
         // -- all combinations of compiler flags and data generations

@@ -174,6 +174,42 @@ def read_rb_file(fn, rename=True, with_file=True, tempdir_suffix=""):
     return samples
 
 
+def read_tppl_incremental_file(fn, with_file=True, tempdir_suffix=""):
+    if with_file:
+        temp_fn = get_temp_file(fn, tempdir_suffix=tempdir_suffix)
+        if temp_fn.exists():
+            return pd.read_csv(temp_fn, index_col=0)
+
+    def extract_params(data_entry):
+        rename_lambda = [
+            "lambda_01",
+            "lambda_10",
+            "lambda_12",
+            "lambda_21",
+        ]
+        # Remove the tree
+        data_entry.pop("tree")
+
+        # Flatten the lambda entry
+        for i, lambda_val in enumerate(data_entry["lambda"]):
+            data_entry[rename_lambda[i]] = lambda_val
+        data_entry.pop("lambda")
+
+        return data_entry
+
+    samples = []
+    with open(fn) as fh:
+        for line in fh:
+            parsed_line = json.loads(line)
+            if "__data__" in parsed_line:
+                samples.append(extract_params(parsed_line["__data__"]))
+
+    df = pd.DataFrame.from_dict(samples)
+    if with_file:
+        df.to_csv(temp_fn)
+    return df
+
+
 def read_tppl_file(fn, with_file=True, tempdir_suffix=""):
     if with_file:
         temp_fn = get_temp_file(fn, tempdir_suffix=tempdir_suffix)
@@ -418,10 +454,10 @@ def get_ess_df(df, groupby, data_col="inference_data"):
 
 def ess_group_bar_plot(df_ess, groupby):
     grouped_df_ess = df_ess.groupby(groupby)
-    fig, axs = plt.subplots(grouped_df_ess.ngroups, 1)
+    fig, axs = plt.subplots(grouped_df_ess.ngroups, 1, squeeze=False)
     for i, (gname, group) in enumerate(grouped_df_ess):
-        ax = axs[i]
-        group = group.drop(groupby + ["weights"], axis=1)
+        ax = axs[i, 0]
+        group = group.drop(groupby, axis=1)
         ess_bar_plot(group, ax)
         ax.set_title(f"ESS for model '{': '.join(map(str, gname))}'")
     fig.tight_layout()
