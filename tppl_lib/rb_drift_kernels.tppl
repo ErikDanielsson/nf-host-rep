@@ -1,0 +1,55 @@
+import "drift_kernels.tppl"
+
+function rbLambdaMove(
+  x: Real[]
+) {
+  /*
+  * This hard codes the simplex move used for the switch rate parameter in the
+  * RevBayes implementation. See docs/revbayes_drift_kernels.md for more details
+  */
+  let weights = [2. / 7., 5. / 7.];
+  let alphas = [10., 25.];
+  return stochSimplexMove(x, weights, alphas);
+}
+
+function rbBetaMove(
+  x: Real
+) {
+  /*
+  * This hard codes the scale move used for the phy_scale parameter in the
+  * RevBayes implementation. See docs/revbayes_drift_kernels.md for more details
+  */
+  return scaleMove(x, 1.);
+}
+
+function rbMuMove(
+  x: Real
+) {
+  /*
+  * This hard codes the scale move used for the clock_host parameter in the
+  * RevBayes implementation. See docs/revbayes_drift_kernels.md for more details
+  */
+  let weights = [2. / 7., 5. / 7.];
+  let lambdas = [1., 0.2];
+  return stochScaleMove(x, weights, lambdas);
+}
+
+function notRbLambdaMove(
+  x: Real[]
+) {
+  /*
+  * This hard codes the simplex move used for the switch rate parameter in the
+  * RevBayes implementation. See docs/revbayes_drift_kernels.md for more details
+  */
+  return simplexMove(x, 25.);
+}
+
+function notRbMuMove(
+  x: Real
+) {
+  /*
+  * This hard codes the scale move used for the clock_host parameter in the
+  * RevBayes implementation. See docs/revbayes_drift_kernels.md for more details
+  */
+  return scaleMove(x, 0.2);
+}

@@ -24,7 +24,10 @@ function stochSimplexMove(
   /*
    * Select a simplexMove stochastically 
    */ 
-  assume i ~ Categorical(weights);
+  assume i ~ Categorical(weights) drift Categorical(weights);
+  printLn(int2string(length(weights)));
+  printLn(int2string(i));
+  printLn(int2string(length(alphas)));
   return simplexMove(x, alphas[addi(i, 1)]);
 }
 
@@ -50,6 +53,9 @@ function stochScaleMove(
   /*
    * Select a scaleMove stochastically 
    */ 
-  assume i ~ Categorical(weights);
+  assume i ~ Categorical(weights) drift Categorical(weights);
+  printLn(int2string(length(weights)));
+  printLn(int2string(i));
+  printLn(int2string(length(lambdas)));
   return scaleMove(x, lambdas[addi(i, 1)]);
 }

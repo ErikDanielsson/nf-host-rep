@@ -1,5 +1,5 @@
 import "stdlib::seq.mc"
-import "drift_kernels.tppl"
+import "rb_drift_kernels.tppl"
 /*
  *  Host repertoire model with no likelihood
  *  
@@ -76,10 +76,10 @@ type ReturnType = ReturnType{tree: HistoryTree, lambda: Real[], mu: Real, beta: 
 model function mymodel(symbiont_tree: TreeLabeled, ntips: Int, nhosts: Int, interactions: Int[],
   host_distances: Real[], dMean: Real, tune: Real): ReturnType {
 
-  // Set priors for model parameters
-  assume lambda ~ Dirichlet([1.0,1.0,1.0,1.0]) drift simplexMove(lambda, 10.);
-  assume mu ~ Exponential(10.0) drift scaleMove(mu, 1.);
-  assume beta ~ Exponential(1.0) drift scaleMove(beta, 1.);
+ // Set priors for model parameters
+  assume lambda ~ Dirichlet([1.0,1.0,1.0,1.0]) drift notRbLambdaMove(lambda); 
+  assume mu ~ Exponential(10.0) drift notRbMuMove(mu);
+    assume beta ~ Exponential(1.0) drift rbBetaMove(beta);
 
   // Set transition rate matrix for three-state independence model
   let r = mtxCreate(3,3,

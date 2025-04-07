@@ -44,7 +44,7 @@ process run_hostrep_treeppl {
     
     script:
     """
-    ./${hostrep_bin} ${phyjson_file} ${niter} > output.${genid}.${compile_id}.json 2> log.${genid}.${compile_id}.txt
+    OCAMLRUNPARAM=b ./${hostrep_bin} ${phyjson_file} ${niter} > output.${genid}.${compile_id}.json 2> log.${genid}.${compile_id}.txt
     """
 
     stub:

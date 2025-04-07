@@ -254,6 +254,8 @@ def generate_report(run_name, burnin=0):
     groupby_keys_tppl = ["model_dir", "model_name", "genid"]
     groupby_keys_rb = ["file_type", "genid"]
 
+    groupby_tppl_key = lambda x: (x[2], x[1], x[0])
+
     # Execute the python code we need to determine what pipeline was executed
     global_variables = {}
     exec(
@@ -295,7 +297,8 @@ def generate_report(run_name, burnin=0):
                 subst_variables(tppl_tree_plots_cell_template, {}),
                 global_variables,
             )
-        groupby_values_tppl = global_variables["reduced_df_tppl"].index
+        groupby_values_tppl = list(global_variables["reduced_df_tppl"].index)
+        groupby_values_tppl.sort(key=groupby_tppl_key)
     if global_variables["has_rb"]:
         exec(
             subst_variables(
