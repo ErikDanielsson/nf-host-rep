@@ -136,9 +136,10 @@ rb_trace_plot_cell_template = """
 # | fig-cap: "___nsamples___ samples from the RevBayes implementation"
 az.plot_trace(
     reduced_df_rb.loc[___groupby_value___, "multi_channel"],
-    figsize=(10, 10),
+    figsize=(8, 10),
     compact=False
 )
+plt.tight_layout()
 plt.show()
 """
 
@@ -151,9 +152,10 @@ tppl_trace_plot_cell_template = """
 # | fig-cap: "___nsamples___ samples from the TPPL implementation  `___groupby_value___`"
 az.plot_trace(
     reduced_df_tppl.loc[___groupby_value___, "multi_channel"],
-    figsize=(10, 10),
+    figsize=(8, 10),
     compact=False
 )
+plt.tight_layout()
 plt.show()
 """
 rb_ESS_text = """
@@ -192,6 +194,22 @@ for i in df_trees.index:
     tree_plot_paths.append(tree_plot_path)
 """
 
+
+"""
+likelihood = (
+    reduced_df_tppl.loc[("likelihood", "uniformization_JC_weight", 1), "multi_channel"]
+).posterior.likelihood.to_numpy()
+print(likelihood)
+fig, axs = plt.subplots(2, 2)
+axs = axs.flatten()
+sns.histplot(likelihood[0, :], ax=axs[0])
+sns.histplot(likelihood[1, :], ax=axs[1])
+axs[2].plot(range(10001), sorted(likelihood[0, :]))
+axs[3].plot(range(10001), sorted(likelihood[1, :]))
+print(likelihood[0, :].mean())
+print(likelihood[1, :].mean())
+plt.show()
+"""
 
 FIG_COUNTER = 0
 

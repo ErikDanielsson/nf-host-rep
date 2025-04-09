@@ -1,3 +1,4 @@
+import "stdlib::ext/dist-ext.mc"
 /*
  * Library of drift kernels emulating the drift kernels from the RevBayes implementation
  */
@@ -23,11 +24,9 @@ function stochSimplexMove(
 ) {
   /*
    * Select a simplexMove stochastically 
+   * THIS IS NOT SUPPORTED CURRENTLY
    */ 
-  assume i ~ Categorical(weights) drift Categorical(weights);
-  printLn(int2string(length(weights)));
-  printLn(int2string(i));
-  printLn(int2string(length(alphas)));
+  assume i ~ Categorical(weights);
   return simplexMove(x, alphas[addi(i, 1)]);
 }
 
@@ -52,8 +51,9 @@ function stochScaleMove(
 ) {
   /*
    * Select a scaleMove stochastically 
+   * THIS IS NOT SUPPORTED CURRENTLY
    */ 
-  assume i ~ Categorical(weights) drift Categorical(weights);
+  assume i ~ Categorical(weights);
   printLn(int2string(length(weights)));
   printLn(int2string(i));
   printLn(int2string(length(lambdas)));
