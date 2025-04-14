@@ -219,8 +219,8 @@ workflow {
 
     if (params.run_revbayes) {
         rev_bayes_in_ch = runid.combine(
-            generate_trees_and_interactions.out.symbiont_tree
-            .join(generate_trees_and_interactions.out.host_tree)
+            generate_trees.out.symbiont_tree
+            .join(generate_trees.out.host_tree)
             .join(interactions_nex_ch)
         )
 

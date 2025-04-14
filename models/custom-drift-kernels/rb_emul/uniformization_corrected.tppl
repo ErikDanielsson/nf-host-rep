@@ -1,5 +1,6 @@
 import "stdlib::seq.mc"
 import "drift_kernels.tppl"
+import "mat_lib.mc"
 /*
  *  Host repertoire model with full rejection sampling
  *  
