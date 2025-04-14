@@ -1,4 +1,5 @@
 import "stdlib::seq.mc"
+import "mat_lib.mc"
 /*
  *  Host repertoire model (original implementation by Mariana Pires Braga)
  *  

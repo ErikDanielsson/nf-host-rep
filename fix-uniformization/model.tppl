@@ -485,6 +485,7 @@ function proposeEventsUniformization(
   );
   let nEvents = nEventsDebt.i;
   let nEventsWeight = nEventsDebt.r; 
+  printLn(real2string(nEventsWeight));
   /*
   printLn(join(["Min transitions ", int2string(minTransitions)]));
   print("N events: ");
@@ -520,7 +521,7 @@ type IntReal = IntReal {
 }
 
 function getNEvents(
-  q: Matrix[Real], r: Matrix[Real], nu: Real, t: Real,a: Int, b: Int
+  q: Matrix[Real], r: Matrix[Real], nu: Real, t: Real, a: Int, b: Int
 ): IntReal {
   /*
    * Sample the number of events conditional on the end state
@@ -552,10 +553,15 @@ function eventHelper(
   prevVal: Real,
   accProb: Real
 ): IntReal {
+  // Get the probability vector the different events after n steps
   let newRa = mtxMul(prevRa, r);
+  // Get the probability of reaching b after n step
   let rab = mtxGet(1, incr(b), newRa);
+  // Calculate the current Poisson probability
   let newVal = prevVal * nu * t / int2real(n);
+  // Add the probability of reaching this state and condition on the endpoint
   let newProb = newVal * rab / pab;
+  // Accumuluate the likelihood
   let newAccProb = accProb + newProb;
   if u < newAccProb {
     return IntReal { i = n, r = log(newProb) };
@@ -645,7 +651,8 @@ function getEventTimes(
     },
     unorderedEventTimes
   );
-  let logDebt = sortedUniformLogDebt(nEvents, startTime, endTime);
+  let intLength = endTime - startTime;
+  let logDebt = -int2real(nEvents) * log(intLength); // sortedUniformLogDebt(nEvents, startTime, endTime);
   return UBranchEventTimesAndDebt{ eventTimes = eventTimes, logDebt = logDebt };
 }
 
@@ -661,12 +668,12 @@ function sampleEventTimes(
 } 
 
 // This will compute the log likelihood of sampling nEvents sorted uniform variables on the given interval
-// The pdf is 1/n! 1 / (b - a)^n I_{[a, b]^n}(x) -- the factorial comes from sorting the array
+// The pdf is n! 1 / (b - a)^n I_{[a, b]^n}(x) -- the factorial comes from sorting the array
 function sortedUniformLogDebt(
   nEvents: Int, startTime: Real, endTime: Real
 ): Real {
   let intLength = endTime - startTime;
-  return - int2real(nEvents) * log(intLength) - fold(
+  return - int2real(nEvents) * log(intLength) + fold(
     function (acc: Real, n: Int) {
       return acc + log(int2real(n));
     },
@@ -729,14 +736,14 @@ function backwardsMsgs(
 function sampleForwards(
   i: Int,
   kernel: Matrix[Real],
-  prevI: Int,
+  prevSample: Int,
   backwardMsgs: Matrix[Real][],
   nEvents: Int
 ): UBranchEventsAndDebt {
   if (eqi(i, nEvents)) {
     return UBranchEventsAndDebt{ events = [], logDebt = 0.0};
   } else {
-    let forward = mtxGetRow(incr(prevI), kernel); // The forward transition probabilities is just the correct row vector of the kernel
+    let forward = mtxGetRow(incr(prevSample), kernel); // The forward transition probabilities is just the correct row vector of the kernel
     let backward = backwardMsgs[incr(i)]; // Get the backward transition probabilities 
     let totMsg = mtxNormalize(
       mtxTrans(
