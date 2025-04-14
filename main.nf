@@ -1,11 +1,16 @@
 nextflow.enable.dsl=2
 
 include {
-    generate_trees_and_interactions;
+    generate_trees;
     rev_annotate_tree;
-    generate_phyjson;
-    clean_phyjson
-} from "./modules/gendata"
+    // generate_phyjson;
+    clean_phyjson;
+    tree_phyjson;
+} from "./modules/gendata/trees"
+
+include {
+    generate_random_interactions;
+} from "./modules/gendata/interactions/random"
 
 include {
     compile_model;
@@ -15,6 +20,24 @@ include {
 include {
     run_hostrep_revbayes
 } from "./modules/revbayes"
+
+
+include {
+    revbayes_interactions;
+    clean_rb_csv;
+} from "./modules/gendata/interactions/revbayes"
+
+include {
+    compile_interactions_tppl;
+    run_interactions_tppl;
+    add_params_phyjson;
+    interactions_json_to_csv;
+    interactions_csv_to_nex;
+} from "./modules/gendata/interactions/treeppl"
+
+include {
+    add_interactions_to_phyjson
+} from "./modules/gendata/interactions/helpers"
 
 workflow {
     // Define the simulations
@@ -29,31 +52,96 @@ workflow {
     int freq_subsample = (int)params.subsample
 
     tppl_lib_ch = Channel.fromPath("${params.tppl_lib_path}/*").collect()
+    gendata_params = genid.combine(Channel.fromPath("$baseDir/${params.gendata_params}"))
 
     // Generate data from a coalescent model
-    generate_trees_and_interactions(
+    generate_trees(
         genid,
         nsymbionts,
-        nhosts,
+        nhosts
     )
 
     // Pass the symbiont tree through revbayes to give it node labels
     rev_annotate_tree(
-        genid,
-        generate_trees_and_interactions.out.symbiont_tree.map {gid, tree -> tree}
-    )
-    // Generate the phyJSON
-    generate_phyjson(
-        genid,
-        rev_annotate_tree.out.rev_tree.map  {gid, tree -> tree},
-        generate_trees_and_interactions.out.host_tree.map {gid, tree -> tree},
-        generate_trees_and_interactions.out.interactions_csv.map {gid, file -> file}
+        generate_trees.out.symbiont_tree
     )
 
-    clean_phyjson(
-        genid,
-        generate_phyjson.out.dirty_phyjson.map {gid, tree -> tree}
-    )
+    // Construct a phyjson file containing the symbiont tree
+    // and the distance metric induced by the host tree
+    // The cleaning step is necessary due to the fact that 
+    // R does not distinguish floats and ints
+    partial_phyjson_ch = tree_phyjson(
+        rev_annotate_tree.out.rev_tree.join(
+            generate_trees.out.host_tree
+        )
+    ) | clean_phyjson
+
+    def interactions_csv_ch
+    def interactions_nex_ch
+    if (params.interactions == "revbayes") {
+
+        revbayes_interactions_in_ch = rev_annotate_tree.out.rev_tree.join(
+            generate_trees.out.host_tree
+        ).join(
+            gendata_params
+        )
+
+        revbayes_interactions(
+            revbayes_interactions_in_ch
+        )
+
+        clean_rb_csv(revbayes_interactions.out.interactions_csv)
+
+        interactions_nex_ch = revbayes_interactions.out.interactions_nex
+        interactions_csv_ch = clean_rb_csv.out.interactions_csv
+        
+    } else if (params.interactions == "treeppl") {
+        tppl_sim_ch = genid.combine(Channel.of("$baseDir/bin/simulate.tppl").first())
+
+        compile_interactions_tppl(
+            tppl_sim_ch,
+            tppl_lib_ch,
+            "-m mcmc-lightweight -m mcmc-lightweight-temp --align --cps full --kernel --thin-period 10 --incremental-printing",
+        )
+
+        add_params_phyjson(partial_phyjson_ch.join(gendata_params))
+
+        interactions_sim_in_ch = compile_interactions_tppl.out.sim_bin.join(
+            add_params_phyjson.out.phyjson
+        )
+
+        run_interactions_tppl(
+            interactions_sim_in_ch
+        )
+
+        interactions_csv_ch = interactions_json_to_csv(
+            run_interactions_tppl.out.interactions_json
+        )
+
+        interactions_nex_ch = interactions_csv_to_nex(
+            interactions_csv_ch
+        )
+
+    } else {
+        /* 
+         * This will generate a dataset without regards to the phylogenetic signal
+         */ 
+        generate_random_interactions(
+            genid,
+            nsymbionts,
+            nhosts
+        )
+        interactions_csv_ch = generate_random_interactions.out.interactions_csv
+        interactions_nex_ch = generate_random_interactions.out.interactions_nex
+
+    }
+
+    add_interactions_to_phyjson(
+        partial_phyjson_ch.join(
+            interactions_csv_ch
+        )
+    ) 
+    
     if (params.run_treeppl) {
 
         def model_flag_combs
@@ -119,7 +207,7 @@ workflow {
         // Create the in file channel
         // -- all combinations of compiler flags and data generations
         treeppl_in_ch = compile_model.out.hostrep_bin.combine(
-            clean_phyjson.out.phyjson
+            add_interactions_to_phyjson.out.phyjson
         )
 
         // Run the treeppl implementation
@@ -133,7 +221,7 @@ workflow {
         rev_bayes_in_ch = runid.combine(
             generate_trees_and_interactions.out.symbiont_tree
             .join(generate_trees_and_interactions.out.host_tree)
-            .join(generate_trees_and_interactions.out.interactions_nex)
+            .join(interactions_nex_ch)
         )
 
         revbayes_out_ch = run_hostrep_revbayes(

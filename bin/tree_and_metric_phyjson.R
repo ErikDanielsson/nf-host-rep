@@ -1,5 +1,4 @@
-#!/usr/bin/env Rscript
-
+#! /usr/bin/env Rscript
 library(tidyverse)
 library(ape)
 library(evolnets)
@@ -10,28 +9,17 @@ args <- commandArgs(trailingOnly = TRUE)
 
 symbiont_tree_fn <- args[1]
 host_tree_fn <- args[2]
-interactions_csv_fn <- args[3]
-phyjson_path <- args[4]
+phyjson_path <- args[3]
+interaction_params_path <- args[4]
 
 symbiont_tree <- read_tree_from_revbayes(symbiont_tree_fn)
-
 host_tree <- read.tree(host_tree_fn)
-df_int <- read.csv(interactions_csv_fn, row.names = 1, header = TRUE)
-df_int <- df_int[grepl("^Symbiont", rownames(df_int)), ]
-df_int_sorted <- df_int[order(as.numeric(gsub("\\D+", "", rownames(df_int)))), ]
-m <- as.matrix(df_int_sorted)
-
-###### Prepare input for treepplr ######
-#
-# symbiont_tree: TreeLabeled, ntips: Int, nhosts: Int,
-# interactions: Int[], host_distances: Real[],
-# dMean: Real, tune: Real
 
 ntips <- Ntip(symbiont_tree)
 nhosts <- Ntip(host_tree)
-interactions <- m
 host_distances <- cophenetic.phylo(host_tree)
-dMean <- sum(host_distances) / factorial(nhosts)
+# The mean distance is the sum of all distances divided by the number of ordered pairs
+meanDistance <- sum(host_distances) / (nhosts * (nhosts - 1))
 tune <- 1.0
 
 phyjson_tree <- treepplr::tp_phylo_2_phyjson(symbiont_tree)
@@ -41,8 +29,7 @@ json_obj$ntips <- ntips
 json_obj$nhosts <- nhosts
 json_obj$ntips <- ntips
 json_obj$nhosts <- nhosts
-json_obj$interactions <- c(t(interactions))
 json_obj$host_distances <- c(t(host_distances))
-json_obj$dMean <- dMean
+json_obj$dMean <- meanDistance
 json_obj$tune <- tune
 write_json(json_obj, phyjson_path, pretty = TRUE, auto_unbox = TRUE)

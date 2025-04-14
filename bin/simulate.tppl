@@ -1,0 +1,331 @@
+/* 
+ * Simulate host repertoires from the a set of fixed parameters
+ * 
+ * This simulates the root repertorie from the stationary distribution of the independence model,
+ * correcting for errorneuos repertoires with rejection sampling
+ * and then simulates the events and event times from the full model
+ * directly using the embedded Markov chain formulation.
+
+ */
+
+import "stdlib::seq.mc"
+import "mat_lib.mc"
+/*
+ *  Host repertoire model with full rejection sampling
+ *  
+ * This file extends what we do in host_rep_rejection_simple.tppl with checking
+ * whether all repertoires are valid along a branch *before* running the
+ * full model
+ *
+ */ 
+/*---------------------------- TYPES --------------------------------*/
+
+// TreeLabeled is like the built in Tree type, but with leaf and node labels
+type TreeLabeled =
+    | Leaf{age: Real, label: Int}
+    | Node{age: Real, left: TreeLabeled, right: TreeLabeled, label: Int}
+
+type HistoryTree =
+  | HistoryLeaf{
+    age: Real, label: Int, repertoire: Int[], history: HistoryPoint[]
+  }
+  | HistoryNode {
+    age: Real, label: Int, repertoire: Int[], history: HistoryPoint[],
+    left: HistoryTree, right: HistoryTree
+  }
+
+// History point type used to store repertoire snapshots at the repertoire
+// start ages, which is the time of the event that led to that combination
+type HistoryPoint = HistoryPoint{age: Real, repertoire: Int[]}
+
+
+type ModelParams = 
+  ModelParams{q: Matrix[Real], beta: Real, d: Matrix[Real], meanDist: Real}
+
+// Tree decorated with ancestral host repertoires and branch repertoire histories
+// Type used to hold the character histories and parameter values to be outputed
+type ReturnType = ReturnType{tree: HistoryTree, interactions: LabeledRepertoire[]}
+
+// Generic container type for when we need two ints and a real.
+type IntIntReal = IntIntReal {i1: Int, i2: Int, r: Real}
+
+// Contains the repertoire for along with the node label.
+// This is used when compiling the leaf (extant) repertoires
+type LabeledRepertoire = LabeledRepertoire { repertoire: Int[], label: Int }
+
+
+model function simHostRep(
+  symbiont_tree: TreeLabeled,
+  ntips: Int,
+  nhosts: Int,
+  host_distances: Real[],
+  dMean: Real,
+  tune: Real,
+  mu: Real,
+  beta: Real,
+  lambda01: Real,
+  lambda10: Real,
+  lambda12: Real,
+  lambda21: Real
+): ReturnType {
+  // The lambda values we pass need not be normalized
+  // so we to this manually
+  let lSum = lambda01 + lambda10 + lambda12 + lambda21;
+  let nLambda01 = lambda01 / lSum;
+  let nLambda10 = lambda10 / lSum;
+  let nLambda12 = lambda12 / lSum;
+  let nLambda21 = lambda21 / lSum;
+
+  let r = mtxCreate(3,3,
+    [-nLambda01,             nLambda01,       0.0,
+      nLambda10, -(nLambda10+nLambda12),  nLambda12,
+           0.0,             nLambda21, -nLambda21]
+  );
+  let q = mtxSclrMul(mu, r);
+
+  let d = mtxCreate(nhosts, nhosts, host_distances);
+
+  let modelParams = ModelParams { q = q, beta = beta, d = d, meanDist = dMean };
+  let rootRep = simulateStationaryRep(q, nhosts);
+
+  let simTree = HistoryNode {
+    age = symbiont_tree.age, 
+    label = symbiont_tree.label, 
+    repertoire = rootRep,
+    history = [],
+    left = simulate(symbiont_tree.left, rootRep, symbiont_tree.age, modelParams),
+    right = simulate(symbiont_tree.right, rootRep, symbiont_tree.age, modelParams)
+  };
+  let extantInteractions = getExtantInteractions(simTree);
+  let sortedInteractions = qSort(function(
+    lRep1: LabeledRepertoire, lRep2: LabeledRepertoire
+  ) {
+    return subi(lRep1.label, lRep2.label);
+  }, extantInteractions);
+  return ReturnType { tree = simTree, interactions = sortedInteractions };
+}
+
+function getExtantInteractions(node: HistoryTree): LabeledRepertoire[] {
+  if node is HistoryNode {
+    return join([getExtantInteractions(node.left), getExtantInteractions(node.right)]);
+  } else {
+    return [LabeledRepertoire { repertoire = node.repertoire, label = node.label}];
+  }
+}
+
+function simulateStationaryRep(q: Matrix[Real], nHosts: Int): Int[] {
+  let probs = indepStatProbs(q);
+  return repertoireRS(probs, nHosts);
+}
+
+function repertoireRS(probs: Real[], nHosts: Int): Int[] {
+  let rep = sapply(
+    range(1, incr(nHosts), 1),
+    function(i: Int) {
+      assume h ~ Categorical(probs) drift Categorical(probs);
+      return h;
+    }
+  );
+  printLn(int2string(length(range(1, incr(nHosts), 1))));
+  printLn(int2string(nHosts));
+  printLn(int2string(length(rep)));
+  if validRep(rep) {
+    return rep;
+  } else {
+    return repertoireRS(probs, nHosts);
+  }
+}
+
+function validRep(rep: Int[]) {
+  return gti(n2s(rep), 0);
+}
+
+function indepStatProbs(q: Matrix[Real]): Real[] {
+  /* 
+   * If we had more linear algebra support this could be handed of
+   * to a library. The special case here corresponds solving the 
+   * for the null space explictly.
+   */ 
+   let rate10 = mtxGet(2, 1, q) / -mtxGet(1, 1, q);
+   let rate21 = -mtxGet(3, 3, q) / mtxGet(2, 3, q);
+
+   let pi3 = 1. / (1. + rate21 + rate21 * rate10);
+   let pi2 = pi3 * rate21;
+   let pi1 = pi2 * rate10;
+   return [pi1, pi2, pi3];
+}
+
+function simulate(
+  node: TreeLabeled,
+  prevRep: Int[],
+  prevAge: Real, 
+  modelParams: ModelParams
+): HistoryTree {
+  // Simulate the history up until this point
+  let branchHistory = simulateBranch(prevRep, prevAge, node.age, modelParams);
+  // The repertoire at this node is the final repetorie in the branch history
+  // This works since the exponentials are memoryless
+  let nodeRepFunc = function(branchHistory: HistoryPoint[], prevRep: Int[]) {
+    let hLen = length(branchHistory);
+    if eqi(hLen, 0) {
+      return prevRep;
+    } else {
+      return branchHistory[hLen].repertoire;
+    }
+  };
+  let nodeRep = nodeRepFunc(branchHistory, prevRep);
+
+  if node is Leaf {
+    return HistoryLeaf {
+      age = node.age, 
+      label = node.label,
+      repertoire = nodeRep,
+      history = branchHistory
+    };
+  } else {
+    return HistoryNode {
+      age = node.age, 
+      label = node.label,
+      repertoire = nodeRep,
+      history = branchHistory,
+      left = simulate(node.left, nodeRep, node.age, modelParams),
+      right = simulate(node.right, nodeRep, node.age, modelParams)
+    };
+  }
+}
+
+function simulateBranch(
+  currRep: Int[], currAge: Real, finalAge: Real, modelParams: ModelParams
+): HistoryPoint[] {
+  let allRates = getRates(currRep, modelParams);
+  let totalRate = getTotalRate(allRates);
+  assume jumpTime ~ Exponential(totalRate); // Is this correct?
+  if jumpTime > (currAge - finalAge) {
+    return [];
+  } else {
+    let nextRep = sampleNextRep(currRep, allRates, totalRate, modelParams);
+    let eventAge = currAge - jumpTime;
+    return cons(
+      HistoryPoint {
+        age = eventAge, 
+        repertoire = nextRep
+      },
+      simulateBranch(
+        nextRep, eventAge, finalAge, modelParams
+      )
+    );
+  }
+}
+
+function sampleNextRep(
+  currRep: Int[], allRates: IntIntReal[], totalRate: Real, modelParams: ModelParams
+): Int[] {
+  let probs = sapply(
+    allRates, function (iir: IntIntReal) { return iir.r / totalRate; }
+  );
+  assume i ~ Categorical(probs);
+  let nextEvent = allRates[incr(i)];
+  return zipWith(
+    function (h: Int, i: Int) {
+      if eqi(i, nextEvent.i1) { return nextEvent.i2; } else { return h; }
+    }, currRep, range(1, incr(length(currRep)), 1)
+  );
+}
+
+
+
+function getTotalRate(events: IntIntReal[]) {
+  return fold(
+    function (acc: Real, ir: IntIntReal) { return acc + ir.r; },
+    0.0,
+    events
+  );
+}
+
+function getRates(currRep: Int[], modelParams: ModelParams) {
+  /*
+   * Accumulate possible events and their rates given the current repertorie
+   */   
+  let n = length(currRep);
+  let gainRates = fold(
+    function(acc: IntIntReal[], i: Int) {
+      let fromState = currRep[i];
+      if eqi(fromState, 2) {
+        return acc;
+      } else {
+        return cons(IntIntReal {
+          i1 = i,
+          i2 = incr(fromState),
+          r = getGainRate(
+            currRep, i, fromState, modelParams
+          )
+        }, acc);
+      }
+    },
+    [],
+    range(1, incr(n), 1)
+  );
+  let lossRates = fold(
+    function(acc: IntIntReal[], i: Int) {
+      let fromState = currRep[i];
+      if eqi(fromState, 0) {
+        return acc;
+      } else {
+        return cons(IntIntReal {
+          i1 = i,
+          i2 = decr(fromState),
+          r = getLossRate(
+            currRep, i, fromState, modelParams
+          )
+        }, acc);
+      }
+    }, 
+    [],
+    range(1, incr(n), 1)
+  );
+  return join([gainRates, lossRates]);
+}
+
+function n2s(repertoire: Int[]): Int {
+  return fold(function (acc: Int, h: Int) {
+      if eqi(h, 2) { return incr(acc); } else { return acc; }
+    }, 0, repertoire);
+}
+
+function getLossRate(
+  repertoire: Int[], hostIndex: Int, fromState: Int, modelParams: ModelParams
+): Real {
+  let toState = decr(fromState);
+  let baseRate = mtxGet(incr(fromState), incr(toState), modelParams.q);
+  // Check if we are losing a two and if this results in a legal repertoire
+  if eqi(fromState, 2) && eqi(n2s(repertoire), 1) {
+    return 0.0;
+  } else {
+    return baseRate;
+  }
+}
+
+function getGainRate (
+  repertoire: Int[],
+  hostIndex: Int,
+  fromState: Int,
+  modelParams: ModelParams
+): Real {
+  let toState = incr(fromState);
+  let baseRate = mtxGet(incr(fromState), incr(toState), modelParams.q);
+  // We need to add the phylogenetic influence to the rate
+  // since we have a gain event
+  if (eqi(fromState, 0)) {
+    let currentHosts = whichTrue(sapply(repertoire, function (i: Int) {return eqi(i, 2) || eqi(i, 1); })); 
+    let dist = mtxMean(mtxRowCols(
+      modelParams.d, hostIndex, currentHosts
+    ));
+    return baseRate * (pow(dist/modelParams.meanDist, -modelParams.beta));
+  } else {
+    let currentHosts = whichTrue(sapply(repertoire, function (i: Int) {return eqi(i, 2); }));   
+    let dist = mtxMean(mtxRowCols(
+      modelParams.d, hostIndex, currentHosts
+    ));
+    return baseRate * (pow(dist/modelParams.meanDist, -modelParams.beta));
+  }
+}

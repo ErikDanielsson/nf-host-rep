@@ -29,5 +29,8 @@ let maxi : Int -> Int -> Int = lam a. lam b. maxi a b
 let mini : Int -> Int -> Int = lam a. lam b. mini a b
 
 let incr = lam x. succ x
+let decr = lam x. subi x 1
 
 let cons = cons 
+
+let pow = lam x. lam y. pow x y
