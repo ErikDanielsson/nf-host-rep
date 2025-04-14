@@ -805,12 +805,11 @@ function getRate (repertoire: Int[], host_index: Int, to_state: Int, mp: ModelPa
     if (eqi(from_state, 0)) {
       let current_hosts = whichTrue(sapply(repertoire, is1or2)); 
       let dist = mtxMean(mtxRowCols(mp.dMatrix, host_index, current_hosts));
-      return base_rate * (exp(-(mp.beta*(dist/mp.dMean))));
-
+      return base_rate * pow(dist/mp.dMean, -mp.beta);
     } else {
       let current_hosts = whichTrue(sapply(repertoire, is2));   
       let dist = mtxMean(mtxRowCols(mp.dMatrix, host_index, current_hosts));
-      return base_rate * (exp(-(mp.beta*(dist/mp.dMean))));
+      return base_rate * pow(dist/mp.dMean, -mp.beta);
     }
   }
 }
