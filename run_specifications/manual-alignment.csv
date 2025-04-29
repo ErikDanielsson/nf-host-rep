@@ -1,0 +1,2 @@
+independence	reject-accept	-m mcmc-lightweight --align --cps full --kernel --sampling-period 100 --incremental-printing --debug-iterations
+
