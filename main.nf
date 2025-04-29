@@ -100,7 +100,6 @@ workflow {
 
         compile_interactions_tppl(
             tppl_sim_ch,
-            tppl_lib_ch,
             "-m mcmc-lightweight --align --cps full --kernel --sampling-period 10 --incremental-printing",
         )
 

@@ -1,15 +1,89 @@
+import "stdlib::seq.mc"
+/*
+ * Library of drift kernels emulating the drift kernels from the RevBayes implementation
+ */
 
-function categoricalShiftKernel(x: Int, param: Real[], alpha: Real) {
-  if x == 0 {
-    let newParam = [param[1] * alpha, param[2] / (1. - alpha * param[1]), param[3] / (1. - param[1])];
+function simplexMove(x: Real[], alpha: Real) {
+  /*
+   * Drift kernel for Dirichlet distribution aka. probability simplex 
+   *
+   * Proposes from a different Dirichlet distribution centered at the previous value.
+   * The `alpha` parameter is the sum of the rates for each parameter and thus
+   * controls the width of the distribution (large alpha -- narrow distribution)
+   * 
+   * RevBayes source at:
+   * https://github.com/revbayes/revbayes/blob/master/src/core/moves/proposal/simplex/DirichletSimplexProposal.cpp
+   *
+   */
+  let new_params = sapply(x, function (a: Real) { return a * alpha; });
+  return Dirichlet(new_params);
+}
+
+function stochSimplexMove(
+  x: Real[], weights: Real[], alphas: Real[]
+) {
+  /*
+   * Select a simplexMove stochastically 
+   * THIS IS NOT SUPPORTED CURRENTLY
+   */ 
+  assume i ~ Categorical(weights);
+  return simplexMove(x, alphas[i + 1]);
+}
+
+function scaleMove(x: Real, lambda: Real) {
+  /*
+   * Drift kernel for distributions with support on positive real axis
+   * (like exponential r.v.s)
+   *
+   * In the original RevBayes implementation the move samples u ~ U[-0.5, 0.5]
+   * and returns x * exp(-lambda * u). This corresponds to a reciprocal (log-uniform)
+   * distribution on the interval [x exp(-lambda / 2), x exp(lambda / 2)]
+   * 
+   * RevBayes source at:
+   * https://github.com/revbayes/revbayes/blob/master/src/core/moves/proposal/scalar/ScaleProposal.cpp
+   *
+   */
+  return Reciprocal(x * exp(-lambda / 2.), x * exp(lambda / 2.));
+}
+
+function stochScaleMove(
+  x: Real, weights: Real[], lambdas: Real[]
+) {
+  /*
+   * Select a scaleMove stochastically 
+   * THIS IS NOT SUPPORTED CURRENTLY
+   */ 
+  assume i ~ Categorical(weights);
+  return scaleMove(x, lambdas[i + 1]);
+}
+
+function categoricalShiftKernel(
+  x: Int,
+  param: Real[],
+  lambda: Real,
+  errMargin: Real
+) {
+  /*
+   * This returns a categorical distribution where some weight is shifted
+   * from the current value. Sampling of categorical variables is handled
+   * differently by RevBayes and cannot be emulated in TreePPL in a natural
+   * way
+   */ 
+  let currProb = param[x + 1];
+  if currProb < 1. - errMargin {
+    let nextProb = currProb * (1. - lambda);
+    let newParam = sapply(
+      range(0, length(param), 1), 
+      function (i: Int) {
+        if i == x {
+          return nextProb;
+        } else {
+          return param[i + 1] * (1. - nextProb) / (1. - currProb);
+        }
+      }
+    );
     return Categorical(newParam);
   } else {
-    if x == 1 {
-      let newParam = [param[1] / (1. - param[2]), param[2] * alpha,  param[3] / (1. - param[2])];
-      return Categorical(newParam);
-    } else {
-      let newParam = [param[1] / (1. - param[3]),  param[2] / (1. - param[3]), param[3] * alpha];
-      return Categorical(newParam);
-    }
+    return Categorical(param);
   }
 }

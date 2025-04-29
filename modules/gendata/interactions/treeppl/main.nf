@@ -9,7 +9,6 @@ process compile_interactions_tppl {
 
     input: 
         tuple val(genid), path(model_path)
-        path(lib_path)
         val(flags) 
     
     output:
