@@ -1,0 +1,15 @@
+
+function categoricalShiftKernel(x: Int, param: Real[], alpha: Real) {
+  if x == 0 {
+    let newParam = [param[1] * alpha, param[2] / (1. - alpha * param[1]), param[3] / (1. - param[1])];
+    return Categorical(newParam);
+  } else {
+    if x == 1 {
+      let newParam = [param[1] / (1. - param[2]), param[2] * alpha,  param[3] / (1. - param[2])];
+      return Categorical(newParam);
+    } else {
+      let newParam = [param[1] / (1. - param[3]),  param[2] / (1. - param[3]), param[3] * alpha];
+      return Categorical(newParam);
+    }
+  }
+}

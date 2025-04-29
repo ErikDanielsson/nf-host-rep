@@ -1,0 +1,36 @@
+import "container-types.tppl"
+import "stdlib::seq.mc"
+
+function printSeq(s: Real[], i: Int, max: Int): () {
+  if i <= max {
+    print(real2string(s[i]));
+    print(", ");
+    printSeq(s, i + 1, max);
+  } else{
+    printLn("");
+  }
+}
+
+function printSeqInt(s: Int[], i: Int, max: Int): () {
+  if i <= max {
+    print(int2string(s[i]));
+    printSeqInt(s, i + 1, max);
+  } else{
+    printLn("");
+  }
+}
+
+function eventStr(e: Event) {
+  return join([
+    int2string(e.host), ": ", int2string(e.fromState), "->", int2string(e.toState), "(", real2string(e.eventTime), "),"
+  ]);
+}
+
+function printEvent(e: Event) {
+  printLn(eventStr(e));
+}
+
+function printEvents(es: Event[]) {
+  let strs = join(sapply(es, eventStr));
+  printLn(strs);
+}
