@@ -1,0 +1,129 @@
+import "mat_lib.mc"
+import "stdlib::seq.mc"
+
+type UniformizationParams = UniformizationParams {
+  uMatrix: Matrix[Real], // This is the transition matrix
+  qMatrix: Matrix[Real], // This is the rate matrix, not strictly necessary
+  nu: Real // This is the uniformization parameter
+}
+
+function qMatrixtoUMatrix(qMatrix: Matrix[Real]) {
+  // For alignment we assume qMatrix is 3x3
+  let q11 = mtxGet(1, 1, qMatrix);
+  let q22 = mtxGet(2, 2, qMatrix);
+  let q33 = mtxGet(3, 3, qMatrix);
+  let nu = -minf(q11, minf(q22, q33));
+  // This can be replaced with 
+  // let = -mtxFold(minf, 0.0, qMatrix);
+  let uMatrix = mtxAdd(
+    mtxSclrMul(1. / nu, qMatrix),
+    mtxCreateId(3)
+  );
+  return UniformizationParams {
+    uMatrix = uMatrix,
+    qMatrix = qMatrix,
+    nu = nu
+  };
+}
+
+function sampleBranch(
+  startRep: Int[],
+  finalRep: Int[],
+  startAge: Real,
+  finalAge: Real,
+  hostIndex: Int,
+  nhosts: Int,
+  uParams: UniformizationParams
+): Int[] {
+  // Note that startAge > finalAge since the tree is moving forwards in time
+  if hostIndex <= nhosts {
+    let hostHistory = sampleHostHistory(
+      startRep[hostIndex], finalRep[hostIndex], startAge, finalAge, hostIndex, uParams
+    );
+    return join([
+      [hostHistory],
+      sampleBranch(startRep, finalRep, startAge, finalAge, hostIndex + 1, nhosts, uParams)
+    ]);
+  } else {
+    return [];
+  }
+}
+
+type IntReal = IntReal {
+  i: Int,
+  r: Real
+}
+
+function sampleHostHistory(
+  startState: Int,
+  finalState: Int,
+  startAge: Real,
+  finalAge: Real,
+  host: Int,
+  uParams: UniformizationParams
+): Int {
+  let t = startAge - finalAge;
+  let nEvents = getNEvents(
+    uParams.qMatrix,
+    uParams.uMatrix,
+    uParams.nu,
+    t,
+    startState,
+    finalState
+  );
+
+
+  return nEvents.i;
+}
+
+function getNEvents(
+  q: Matrix[Real], r: Matrix[Real], nu: Real, t: Real,a: Int, b: Int
+): IntReal {
+  /*
+   * Sample the number of events conditional on the end state
+   */
+  assume u ~ Uniform(0., 1.); // This should be aligned
+  let poissonProb = exp(-nu * t); 
+  let mexp = mtxExp(mtxSclrMul(t, q)); 
+  let pab = mtxGet(a + 1, b + 1, mexp); // This corresponds to P[X(t) = b | X(0) = a]
+  /*
+  printLn(real2string(t));
+  printMtx(q);
+  printLn(real2string(pab));
+  */
+  let accProb = poissonProb * bool2real(a == b) / pab;
+  if u < accProb {
+    return IntReal { i = 0, r = log(accProb)};
+  } else {
+    // let n = dim(q)[1];
+    let n = 3;
+    let probs = mtxRowKroneckerDelta(a + 1, n);
+    return eventHelper(u, 1, r, nu, t, b, pab, probs, poissonProb, accProb);
+  }
+}
+
+function eventHelper(
+  u: Real,
+  n: Int,
+  r: Matrix[Real],
+  nu: Real,
+  t: Real,
+  b: Int,
+  pab: Real,
+  prevRa: Matrix[Real],
+  prevVal: Real,
+  accProb: Real
+): IntReal {
+  let newRa = mtxMul(prevRa, r);
+  let rab = mtxGet(1,  b + 1, newRa);
+  let newVal = prevVal * nu * t / int2real(n);
+  let newProb = newVal * rab / pab;
+  let newAccProb = accProb + newProb;
+  if u < newAccProb {
+    return IntReal { i = n, r = log(newProb) };
+  } else {
+    return eventHelper(
+      u, n + 1, r, nu, t, b, pab, newRa, newVal, newAccProb
+    );
+  }
+}

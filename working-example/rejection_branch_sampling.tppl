@@ -1,0 +1,53 @@
+function sampleBranch(
+  startRep: Int[],
+  finalRep: Int[],
+  startAge: Real,
+  finalAge: Real,
+  hostIndex: Int,
+  nhosts: Int,
+  embeddedQMatrix: EmbeddedMarkovChainMatrix,
+  maxDepth: Int
+): HistoryPoint[] {
+  // Note that startAge > finalAge since the tree is moving forwards in time
+  if hostIndex <= nhosts {
+    let hostHistory = sampleHostHistory(
+      startRep[hostIndex], finalRep[hostIndex], startAge, finalAge, hostIndex, embeddedQMatrix, maxDepth
+    );
+    return join([
+      hostHistory,
+      sampleBranch(startRep, finalRep, startAge, finalAge, hostIndex + 1, nhosts, embeddedQMatrix, maxDepth)
+    ]);
+  } else {
+    return [];
+  }
+}
+
+
+function sampleHostHistory(
+  startState: Int,
+  finalState: Int,
+  startAge: Real,
+  finalAge: Real,
+  host: Int,
+  embeddedQMatrix: EmbeddedMarkovChainMatrix,
+  maxDepth: Int
+): HistoryPoint[] {
+  let totalRate = embeddedQMatrix.totalRates[startState + 1];
+  // assume t ~ Exponential(totalRate) drift Exponential(totalRate);
+  // let t = 0.1;
+  if startAge - t < finalAge || maxDepth == 0 {
+    // We overshoot so we are finished, or we went below the maximal depth
+    return [];
+  } else {
+    // We need to sample the next event
+    let param = embeddedQMatrix.transitionProbs[startState + 1];
+    let eventTime = startAge - t;
+    // printLn("samplehistory");
+    // printSeq(param, 1, 3);
+    assume nextState ~ Categorical(param) drift Categorical(param);
+    return cons(
+      HistoryPoint {switchTime = eventTime, fromState = startState, toState = nextState, host = host},
+      sampleHostHistory(nextState, finalState, eventTime, finalAge, host, embeddedQMatrix, maxDepth - 1)
+    );
+  }
+}

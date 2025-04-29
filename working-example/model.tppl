@@ -1,0 +1,298 @@
+import "stdlib::seq.mc"
+import "/working-example/lib.mc"
+
+// TreeLabeled is like the built in Tree type, but with leaf and node labels
+type TreeLabeled =
+  | Leaf{age: Real, label: Int}
+  | Node{age: Real, left: TreeLabeled, right: TreeLabeled, label: Int}
+
+  
+type MsgTree =
+  | MsgLeaf{
+    age: Real, label: Int, outMsg: Matrix[Real]
+  }
+  | MsgNode{
+    age: Real, label: Int,
+    left: MsgTree, right: MsgTree,
+    leftInMsg: Matrix[Real], rightInMsg: Matrix[Real],
+    outMsg: Matrix[Real]
+  }
+
+type MarginalTree =
+  | MarginalLeaf {
+    age: Real, label: Int, marginalProb: Matrix[Real]
+  }
+  | MarginalNode {
+    age: Real, label: Int,
+    left: MarginalTree, right: MarginalTree,
+    marginalProb: Matrix[Real]
+  }
+
+type NodeRepTree =
+  | NodeRepLeaf{age: Real, label: Int, repertoire: Int[]}
+  | NodeRepNode{age: Real, left: NodeRepTree, right: NodeRepTree, label: Int, repertoire: Int[]}
+
+type HistoryPoint = HistoryPoint {switchTime: Real, fromState: Int, toState: Int, host: Int}
+
+type HistoryTree =
+  | HistoryLeaf {age: Real, label: Int, repertoire: Int[], history: HistoryPoint[]}
+  | HistoryNode {age: Real, left: HistoryTree, right: HistoryTree, label: Int, repertoire: Int[], history: HistoryPoint[]}
+
+type EmbeddedMarkovChainMatrix = EmbeddedMarkovChainMatrix { totalRates: Real[], transitionProbs: Real[][]}
+
+
+type ReturnType = ReturnType{lambda: Real[], mu: Real, beta: Real}
+
+model function hostRepertoire(
+  tree: TreeLabeled,
+  nhosts: Int,
+  interactions: Int[][]
+): NodeRepTree {
+  assume lambda ~ Dirichlet([1., 1., 1., 1.]) drift function(x: Real[]) {
+    return Dirichlet([1., 1., 1., 1.]); 
+  };
+  assume mu ~ Exponential(10.) drift function(x: Real) {
+    return Exponential(10.);
+  };
+  assume beta ~ Exponential(10.) drift function(x: Real) {
+    return Exponential(10.);
+  };
+
+
+  let r = mtxCreate(3,3,
+    [0.-lambda[1],                lambda[1],          0.0,
+        lambda[2], 0.-(lambda[2]+lambda[3]),    lambda[3],
+              0.0,                lambda[4], 0.-lambda[4]]
+  );
+  let qMatrix = mtxSclrMul(mu, r);
+
+  let rootPrior = mtxCreate(nhosts, 3, ones(3 * nhosts));
+
+  let postorderTree = postorderTraverse(tree, qMatrix, interactions, nhosts);
+  //let embeddedQMatrix = rateMatrixToEmbeddedMarkovChain(qMatrix);
+  let repertoireTree = sampleNodeRepertoires(postorderTree, nhosts, rootPrior);
+
+  return repertoireTree;
+} 
+
+// Compute postorder messages on the observed tree
+function postorderTraverse(
+  tree: TreeLabeled, qMatrix: Matrix[Real], interactions: Int[][], nhosts: Int
+): MsgTree {
+  if tree is Leaf {
+    return MsgLeaf{
+      age = 0.0,
+      label = tree.label,
+      outMsg = mtxCreate(nhosts, 3, observationMessage2(interactions[tree.label], 1, nhosts))
+    };
+  }
+
+  let left = postorderTraverse(tree.left, qMatrix, interactions, nhosts);
+  let right = postorderTraverse(tree.right, qMatrix, interactions, nhosts);
+
+  let tMatrixLeft = mtxTrans(mtxExp(mtxSclrMul(tree.age-left.age, qMatrix)));   
+  let tMatrixRight = mtxTrans(mtxExp(mtxSclrMul(tree.age-right.age, qMatrix)));
+
+  let leftInMsg = mtxMul(left.outMsg, tMatrixLeft);
+  let rightInMsg = mtxMul(right.outMsg, tMatrixLeft);
+
+  let outMsg = mtxElemMul(leftInMsg, rightInMsg);
+
+  return MsgNode{
+    age = tree.age, label = tree.label,
+    left = left, right = right, 
+    leftInMsg = leftInMsg, rightInMsg = rightInMsg,
+    outMsg = outMsg
+  };
+}
+
+function suggestRepAligned(msg: Matrix[Real], i: Int, max: Int) {
+  if i <= max {
+    let param = mtx3ToSeq(msg, i);
+    assume x ~ Categorical(param) drift function(x: Int) {
+      return Categorical(param);
+    };
+    return cons(x, suggestRepAligned(msg, i + 1, max));
+  } else {
+    return [];
+  }
+}
+
+function suggestRepRS(msg: Matrix[Real], max: Int, initialRep: Int[]) {
+  if any(is2, initialRep) {
+    return initialRep;
+  } else {
+    let newRep = suggestRepUnaligned(msg, 1, max);
+    return suggestRepRS(msg, max, newRep);
+  }
+}
+
+function suggestRepUnaligned(msg: Matrix[Real], i: Int, max: Int) {
+  if i <= max {
+    let param = mtx3ToSeq(msg, i);
+    assume x ~ Categorical(param) drift function(x: Int) {
+      return Categorical(param);
+    };
+    return join([[x], suggestRepUnaligned(msg, i + 1, max)]);
+  } else {
+    return [];
+  }
+}
+
+function sampleNodeRepertoires(tree: MsgTree, nhosts: Int, preorderMsg: Matrix[Real]): NodeRepTree {
+  if tree is MsgLeaf {
+    let samplingProb = mtxElemMul(tree.outMsg, preorderMsg);
+    let initRep = suggestRepAligned(samplingProb, 1, nhosts);
+    let rep = suggestRepRS(samplingProb, nhosts, initRep);
+    return NodeRepLeaf { age = tree.age, label = tree.label, repertoire = rep };
+  } else {
+    let samplingProb = mtxElemMul(tree.outMsg, preorderMsg);
+    let initRep = suggestRepAligned(samplingProb, 1, nhosts);
+    let rep = suggestRepRS(samplingProb, nhosts, initRep);
+    let newMsg = mtxCreate(nhosts, 3, observationMessage2(rep, 1, nhosts));
+    let left = sampleNodeRepertoires(tree.left, nhosts, newMsg);
+    let right = sampleNodeRepertoires(tree.right, nhosts, newMsg);
+    return NodeRepNode { age = tree.age, label = tree.label, repertoire = rep, left = left, right = right };
+  }
+}
+
+function sampleBranch(
+  startRep: Int[],
+  finalRep: Int[],
+  startAge: Real,
+  finalAge: Real,
+  nhosts: Int,
+  hostIndex: Int,
+  embeddedQMatrix: EmbeddedMarkovChainMatrix
+): HistoryPoint[] {
+  // Note that startAge > finalAge since the tree is moving forwards in time
+  if hostIndex <= nhosts {
+    let hostHistory = sampleHostHistory(
+      startRep[hostIndex], finalRep[hostIndex], startAge, finalAge, hostIndex, embeddedQMatrix
+    );
+    return join([
+      hostHistory,
+      sampleBranch(startRep, finalRep, startAge, finalAge, nhosts, hostIndex + 1, embeddedQMatrix)
+    ]);
+  } else {
+    return [];
+  }
+}
+
+
+function sampleHostHistory(
+  startState: Int,
+  finalState: Int,
+  startAge: Real,
+  finalAge: Real,
+  host: Int,
+  embeddedQMatrix: EmbeddedMarkovChainMatrix
+): HistoryPoint[] {
+  let totalRate = embeddedQMatrix.totalRates[startState + 1];
+  //let t = 0.1;
+  assume t ~ Exponential(totalRate) drift function(x: Real) {
+    return Exponential(totalRate);
+  };
+  if startAge - t < finalAge {
+    // We overshoot, so are finished
+    return [];
+  } else {
+    // We need to sample the next event
+    let param = embeddedQMatrix.transitionProbs[startState + 1];
+    let eventTime = startAge - t;
+    assume nextState ~ Categorical(param) drift function(x: Int) {
+      return Categorical(param);
+    };
+    return join([
+      [HistoryPoint {switchTime = eventTime, fromState = startState, toState = nextState, host = host}],
+      sampleHostHistory(nextState, finalState, eventTime, finalAge, host, embeddedQMatrix)
+    ]);
+  }
+}
+// Compute leaf message from observed interactions
+function observationMessage2(obsRepertoire: Int[], i: Int, max: Int): Real[] {
+  if i <= max {
+    let stateMsg = makeStateMessage2(obsRepertoire[i]);
+    // Aligned, so don't use join
+    return cons(
+      stateMsg[1],
+      cons(
+        stateMsg[2],
+        cons(
+          stateMsg[3],
+          observationMessage2(obsRepertoire, i + 1, max)
+        )
+      )
+    );
+  } else {
+    return [];
+  }
+}
+
+function makeStateMessage2(interaction: Int): Real[] {
+  if interaction == 0 {
+    return [1., 0., 0.];
+  } else {
+    if interaction == 1 {
+      return [0., 1., 0.];
+    } else {
+      if interaction == 2 {
+        return [0., 0., 1.];
+      } else {
+
+        return [1., 1., 1.];
+      }
+    }
+  } 
+}
+
+
+
+function mtx3ToSeq(mtx: Matrix[Real], i: Int ) {
+  let p1 = mtxGet(i, 1, mtx); 
+  let p2 = mtxGet(i, 2, mtx); 
+  let p3 = mtxGet(i, 3, mtx); 
+  let s = p1 + p2 + p3;
+  return [p1 / s, p2 / s, p3 / s];
+}
+
+function is2(x: Int): Bool {
+  return eqi(x, 2);
+}
+
+
+function ones(nOnes: Int) {
+  if nOnes > 0 {
+    return cons(
+      1.,
+      ones(subi(nOnes, 1))
+    );
+  } else {
+    return [];
+  }
+}
+
+function rateMatrixToEmbeddedMarkovChain(qMatrix: Matrix[Real]): EmbeddedMarkovChainMatrix {
+  /*
+   * Construct a sequence representations of the qMatrix which we can later use for sampling
+   * from the embedded Markov Chain
+   */ 
+  return EmbeddedMarkovChainMatrix {
+    totalRates = [mtxGet(1, 1, qMatrix), mtxGet(2, 2, qMatrix), mtxGet(3, 3, qMatrix)],
+    transitionProbs = [
+      [0.0, mtxGet(1, 2, qMatrix) / mtxGet(1, 1, qMatrix), mtxGet(1, 3, qMatrix) / mtxGet(1, 1, qMatrix)],
+      [mtxGet(2, 1, qMatrix) / mtxGet(2, 2, qMatrix), 0.0, mtxGet(2, 3, qMatrix) / mtxGet(2, 2, qMatrix)],
+      [mtxGet(3, 1, qMatrix) / mtxGet(3, 3, qMatrix), mtxGet(3, 2, qMatrix) / mtxGet(3, 3, qMatrix), 0.0]
+    ]
+  };
+}
+
+function printSeq(s: Int[], i: Int, max: Int): () {
+  if i <= max {
+    print(int2string(s[i]));
+    print(", ");
+    printSeq(s, i + 1, max);
+  } else{
+    printLn("");
+  }
+}

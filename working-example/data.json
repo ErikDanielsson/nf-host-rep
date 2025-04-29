@@ -1,0 +1,55 @@
+{
+    "tree": {
+        "__constructor__": "Node",
+        "__data__": {
+            "label": 4,
+            "age": 2,
+            "left": {
+                "__constructor__": "Node",
+                "__data__": {
+                    "label": 5,
+                    "age": 0.3512,
+                    "left": {
+                        "__constructor__": "Leaf",
+                        "__data__": {
+                            "label": 2,
+                            "age": 0
+                        }
+                    },
+                    "right": {
+                        "__constructor__": "Leaf",
+                        "__data__": {
+                            "label": 1,
+                            "age": 0
+                        }
+                    }
+                }
+            },
+            "right": {
+                "__constructor__": "Leaf",
+                "__data__": {
+                    "label": 3,
+                    "age": 0
+                }
+            }
+        }
+    },
+    "nhosts": 3,
+    "interactions": [
+        [
+            2,
+            0,
+            2
+        ],
+        [
+            0,
+            2,
+            2
+        ],
+        [
+            0,
+            2,
+            0
+        ]
+    ]
+}
