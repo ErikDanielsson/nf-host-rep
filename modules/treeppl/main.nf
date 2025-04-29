@@ -9,14 +9,20 @@ process compile_model {
 
     output:
         tuple val(compile_id), path("${model_dir}.${model_key}.${compile_id}.bin"), emit: hostrep_bin
+        tuple val(compile_id), path("alignment_*.${compile_id}.html"), optional: true // This is the alignment analysis HTML
     
     script:
     def out_fn = "${model_dir}.${model_key}.${compile_id}.bin"
+    def alignment_html = "alignment_${model_dir}.${model_key}.${compile_id}.html"
+    def debug_flags = params.debug_treeppl ? (
+        "--debug-iterations --debug-alignment-html ${alignment_html}"
+        ) : ""
     """
     tpplc ${model_path} \
         --output ${out_fn} \
         --particles ${niter} \
         --seed ${runid} \
+        ${debug_flags} \
         ${inference_flags}
     chmod +x ${out_fn}
     """
@@ -40,7 +46,8 @@ process run_hostrep_treeppl {
         val niter
     
     output:
-        tuple val(genid), val(compile_id), path("output.${genid}.${compile_id}.json"), path("log.${genid}.${compile_id}.txt"), emit: output_json
+        tuple val(genid), val(compile_id), path("output.${genid}.${compile_id}.json"), emit: output_json
+        tuple val(genid), val(compile_id), path("log.${genid}.${compile_id}.txt"), emit: log
     
     script:
     """

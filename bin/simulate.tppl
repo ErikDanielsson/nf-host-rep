@@ -320,12 +320,14 @@ function getGainRate (
     let dist = mtxMean(mtxRowCols(
       modelParams.d, hostIndex, currentHosts
     ));
+    // This is where the implementation differs from the paper version
     return baseRate * (pow(dist/modelParams.meanDist, -modelParams.beta));
   } else {
     let currentHosts = whichTrue(sapply(repertoire, function (i: Int) {return eqi(i, 2); }));   
     let dist = mtxMean(mtxRowCols(
       modelParams.d, hostIndex, currentHosts
     ));
-    return baseRate * (pow(dist/modelParams.meanDist, -modelParams.beta));
+    // This is where the implementation differs from the paper version
+    return baseRate * (pow(dist / modelParams.meanDist, -modelParams.beta));
   }
 }
