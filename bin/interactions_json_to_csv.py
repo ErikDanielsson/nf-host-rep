@@ -12,7 +12,7 @@ with open(interaction_sim_fn) as fh:
     # directly from the true distribution we don't need to add any burnin
     json_line = next(fh)
     parsed = json.loads(json_line)
-    data = parsed["samples"][0]["__data__"]
+    data = parsed["__data__"]
     data.pop("tree")
     interactions = data["interactions"]
     parsed_interactions = [

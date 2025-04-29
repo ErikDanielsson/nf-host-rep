@@ -101,7 +101,7 @@ workflow {
         compile_interactions_tppl(
             tppl_sim_ch,
             tppl_lib_ch,
-            "-m mcmc-lightweight -m mcmc-lightweight-temp --align --cps full --kernel --thin-period 10 --incremental-printing",
+            "-m mcmc-lightweight --align --cps full --kernel --sampling-period 10 --incremental-printing",
         )
 
         add_params_phyjson(partial_phyjson_ch.join(gendata_params))
