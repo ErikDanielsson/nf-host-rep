@@ -42,21 +42,23 @@ process run_hostrep_treeppl {
     container "${ params.container_treeppl }"
 
     input:
-        tuple val(compile_id), path(hostrep_bin), val(genid), path(phyjson_file)//, path(lib_path)
+        tuple val(compile_id), path(hostrep_bin), val(genid), val(param_id), path(phyjson_file)//, path(lib_path)
         val niter
     
     output:
-        tuple val(genid), val(compile_id), path("output.${genid}.${compile_id}.json"), emit: output_json
-        tuple val(genid), val(compile_id), path("log.${genid}.${compile_id}.txt"), emit: log
+        tuple val(genid), val(compile_id), path("output.${param_id}.${genid}.${compile_id}.json"), emit: output_json
+        tuple val(genid), val(compile_id), path("log.${param_id}.${genid}.${compile_id}.txt"), emit: log
     
     script:
     """
-    OCAMLRUNPARAM=b ./${hostrep_bin} ${phyjson_file} ${niter} > output.${genid}.${compile_id}.json 2> log.${genid}.${compile_id}.txt
+    OCAMLRUNPARAM=b ./${hostrep_bin} ${phyjson_file} ${niter} \
+        > output.${param_id}.${genid}.${compile_id}.json \
+        2> log.${param_id}.${genid}.${compile_id}.txt
     """
 
     stub:
     """
-    touch output.${genid}.${compile_id}.json
-    echo $niter > log.${genid}.${compile_id}.txt
+    touch output.${param_id}.${genid}.${compile_id}.json
+    echo $niter > log.${param_id}.${genid}.${compile_id}.txt
     """
 }

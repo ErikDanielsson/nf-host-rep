@@ -18,7 +18,7 @@ process compile_interactions_tppl {
     """
     tpplc $baseDir/bin/simulate.tppl \
         --output sim.${genid}.out \
-        --particles 1 \
+        --particles 0 \
         --seed ${genid} \
         ${flags}
     chmod +x sim.${genid}.out
@@ -31,17 +31,18 @@ process run_interactions_tppl {
     container "${ params.container_treeppl }"
     
     input:
-        tuple val(genid), path(sim_bin), path(phyjson_file)
+        tuple val(genid), path(sim_bin), val(param_id), path(phyjson_file)
 
     output:
-        tuple val(genid), path("simtree_and_interactions.${genid}.json"), emit: interactions_json
-        tuple val(genid), path("log.${genid}.txt"), emit: log
+        tuple val(genid), val(param_id), path("simtree_and_interactions.${param_id}.${genid}.json"), emit: interactions_json
+        tuple val(genid), val(param_id), path("log.${param_id}.${genid}.txt"), emit: log
 
     script: 
     """
-    OCAMLRUNPARAM=b ./${sim_bin} ${phyjson_file} > simtree_and_interactions.${genid}.json 2> log.${genid}.txt
+    OCAMLRUNPARAM=b ./${sim_bin} ${phyjson_file} > simtree_and_interactions.${param_id}.${genid}.json 2> log.${param_id}.${genid}.txt
     """
 }
+
 
 process add_params_phyjson {
     label 'data'
@@ -49,19 +50,26 @@ process add_params_phyjson {
     container "${ params.container_python }"
 
     input:
-        tuple val(genid), path(partial_phyjson_path), path(params_path)
-
+        tuple(
+            val(genid), val(param_id), path(partial_phyjson_path),
+            val(mu), val(beta),
+            val(lambda01), val(lambda10), val(lambda12), val(lambda21)
+        )
     output:
-        tuple val(genid), path("pre_interaction.${genid}.json"), emit: phyjson
+        tuple val(genid), val(param_id), path("pre_interaction.${param_id}.${genid}.json"), emit: phyjson
     
     script:
     """
-    add_params_phyjson.py ${partial_phyjson_path} ${params_path} pre_interaction.${genid}.json
+    add_params_phyjson.py \
+        ${partial_phyjson_path} \
+        pre_interaction.${param_id}.${genid}.json \
+        ${mu} ${beta} \
+        ${lambda01} ${lambda10} ${lambda12} ${lambda21}
     """
 
     stub:
     """
-    touch pre_interaction.${genid}.json
+    touch pre_interaction.${param_id}.${genid}.json
     """
 }
 
@@ -71,21 +79,21 @@ process interactions_json_to_csv {
     container "${ params.container_python }"
 
     input:
-        tuple val(genid), path(int_sim_path)
+        tuple val(genid), val(param_id), path(int_sim_path)
 
     output:
-        tuple val(genid), path("interactions.${genid}.csv"), emit: interactions_csv
+        tuple val(genid), val(param_id), path("interactions.${param_id}.${genid}.csv"), emit: interactions_csv
     
     script:
     """
     interactions_json_to_csv.py \
         ${int_sim_path} \
-        interactions.${genid}.csv
+        interactions.${param_id}.${genid}.csv
     """
 
     stub:
     """
-    touch interactions.${genid}.csv
+    touch interactions.${param_id}.${genid}.csv
     """
 
 }
@@ -96,18 +104,18 @@ process interactions_csv_to_nex {
     container "${ params.container_r }"
 
     input:
-        tuple val(genid), path(interactions_csv_path)
+        tuple val(genid), val(param_id), path(interactions_csv_path)
     
     output:
-        tuple val(genid), path("interactions.${genid}.nex"), emit: interactions_nex
+        tuple val(genid), val(param_id), path("interactions.${param_id}.${genid}.nex"), emit: interactions_nex
     
     script:
     """
-    interactions_csv_to_nex.R ${interactions_csv_path} interactions.${genid}.nex
+    interactions_csv_to_nex.R ${interactions_csv_path} interactions.${param_id}.${genid}.nex
     """
 
     stub:
     """
-    touch interactions.${genid}.nex
+    touch interactions.${param_id}.${genid}.nex
     """
 }

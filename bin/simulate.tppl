@@ -115,29 +115,40 @@ function getExtantInteractions(node: HistoryTree): LabeledRepertoire[] {
 
 function simulateStationaryRep(q: Matrix[Real], nHosts: Int): Int[] {
   let probs = indepStatProbs(q);
-  return repertoireRS(probs, nHosts);
-}
-
-function simulateUniformRepertoire(nHosts: Int): Int[] {
-  let probs = [1. / 3., 1. / 3., 1. / 3.];
-  return repertoireRS(probs, nHosts);
-}
-
-function repertoireRS(probs: Real[], nHosts: Int): Int[] {
   let rep = sapply(
-    range(1, incr(nHosts), 1),
+    range(1, nHosts + 1, 1),
     function(i: Int) {
       assume h ~ Categorical(probs) drift Categorical(probs);
       return h;
     }
   );
-  printLn(int2string(length(range(1, incr(nHosts), 1))));
-  printLn(int2string(nHosts));
-  printLn(int2string(length(rep)));
+  return repertoireRS(probs, nHosts, rep);
+}
+
+function simulateUniformRepertoire(nHosts: Int): Int[] {
+  let probs = [1. / 3., 1. / 3., 1. / 3.];
+  let rep = sapply(
+    range(1, nHosts + 1, 1),
+    function(i: Int) {
+      assume h ~ Categorical(probs) drift Categorical(probs);
+      return h;
+    }
+  );
+  return repertoireRS(probs, nHosts, rep);
+}
+
+function repertoireRS(probs: Real[], nHosts: Int, rep: Int[]): Int[] {
   if validRep(rep) {
     return rep;
   } else {
-    return repertoireRS(probs, nHosts);
+    let rep = sapply(
+      range(1, nHosts + 1, 1),
+      function(i: Int) {
+        assume h ~ Categorical(probs);
+        return h;
+      }
+    );
+    return repertoireRS(probs, nHosts, rep);
   }
 }
 
@@ -229,7 +240,12 @@ function sampleNextRep(
     allRates, function (iir: IntIntReal) { return iir.r / totalRate; }
   );
   assume i ~ Categorical(probs);
-  let nextEvent = allRates[incr(i)];
+  printLn(join([
+    "Sample ", int2string(i),
+    " ", int2string(length(probs)),
+    " allrates ", int2string(length(allRates))
+  ]));
+  let nextEvent = allRates[i + 1];
   return zipWith(
     function (h: Int, i: Int) {
       if eqi(i, nextEvent.i1) { return nextEvent.i2; } else { return h; }

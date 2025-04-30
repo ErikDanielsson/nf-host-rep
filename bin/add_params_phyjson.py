@@ -17,19 +17,15 @@ an existing phyjson file. It should be a csv file with a header with names:
 and single row with the corresponding parameter values we should simulates from
 """
 phyjson_in_fn = sys.argv[1]
-params_fn = sys.argv[2]
-phyjson_out_fn = sys.argv[3]
+phyjson_out_fn = sys.argv[2]
+
 
 with open(phyjson_in_fn) as fh:
     phyjson = json.load(fh)
 print(phyjson)
-with open(params_fn) as fh:
-    reader = csv.reader(fh, delimiter="\t")
-    header_line = map(str, next(reader))
-    params_line = map(float, next(reader))
-    params = dict(zip(header_line, params_line))
+params_names = ["mu", "beta", "lambda01", "lambda10", "lambda12", "lambda21"]
+params = dict(zip(params_names, map(float, sys.argv[3:])))
 print(params)
-
 phyjson.update(params)
 print(phyjson)
 

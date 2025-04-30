@@ -4,22 +4,22 @@ process add_interactions_to_phyjson {
     container "${ params.container_python }"
 
     input:
-        tuple val(genid), path(partial_phyjson_path), path(interactions_csv)
+        tuple val(genid), path(partial_phyjson_path), val(param_id), path(interactions_csv)
 
     output:
-        tuple val(genid), path("final_phyjson.${genid}.json"), emit: phyjson
+        tuple val(genid), val(param_id), path("final_phyjson.${param_id}.${genid}.json"), emit: phyjson
     
     script:
     """
     add_interactions_phyjson.py \
         ${partial_phyjson_path} \
         ${interactions_csv} \
-        final_phyjson.${genid}.json
+        final_phyjson.${param_id}.${genid}.json
     """
 
     stub:
     """
-    touch final_phyjson.${genid}.json
+    touch final_phyjson.${param_id}.${genid}.json
     """
 
 }

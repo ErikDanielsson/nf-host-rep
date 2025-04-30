@@ -52,7 +52,18 @@ workflow {
     int freq_subsample = (int)params.subsample
 
     tppl_lib_ch = Channel.fromPath("${params.tppl_lib_path}/*").collect()
-    gendata_params = genid.combine(Channel.fromPath("$baseDir/${params.gendata_params}"))
+    param_id = 0
+    gendata_params = Channel.fromPath("$baseDir/${params.gendata_params}")
+        | splitCsv(sep:"\t", header: true)
+        | map {row -> [
+            param_id++,
+            row.mu,
+            row.beta,
+            row.lambda01,
+            row.lambda10,
+            row.lambda12,
+            row.lambda21,
+        ]}
 
     // Generate data from a coalescent model
     generate_trees(
@@ -100,15 +111,20 @@ workflow {
 
         compile_interactions_tppl(
             tppl_sim_ch,
-            "-m mcmc-lightweight --align --cps full --kernel --sampling-period 10 --incremental-printing",
+            "-m mcmc-lightweight --align --cps full --kernel --sampling-period 1 --incremental-printing --debug-iterations",
         )
+        pid = 0
+        params_in_ch = partial_phyjson_ch
+            .combine(gendata_params)
+            .map {
+                gid, pjs, pid, m, b, l1, l2, l3, l4 ->
+                [gid, pid, pjs, m, b, l1, l2, l3, l4]
+            }
+        add_params_phyjson(params_in_ch)
 
-        add_params_phyjson(partial_phyjson_ch.join(gendata_params))
-
-        interactions_sim_in_ch = compile_interactions_tppl.out.sim_bin.join(
-            add_params_phyjson.out.phyjson
+        interactions_sim_in_ch = compile_interactions_tppl.out.sim_bin.combine(
+            add_params_phyjson.out.phyjson, by: 0
         )
-
         run_interactions_tppl(
             interactions_sim_in_ch
         )
@@ -136,8 +152,8 @@ workflow {
     }
 
     add_interactions_to_phyjson(
-        partial_phyjson_ch.join(
-            interactions_csv_ch
+        partial_phyjson_ch.combine(
+            interactions_csv_ch, by: 0
         )
     ) 
     
@@ -220,7 +236,7 @@ workflow {
         rev_bayes_in_ch = runid.combine(
             generate_trees.out.symbiont_tree
             .join(generate_trees.out.host_tree)
-            .join(interactions_nex_ch)
+            .combine(interactions_nex_ch, by: 0)
         )
 
         revbayes_out_ch = run_hostrep_revbayes(
