@@ -29,7 +29,7 @@ model function directReject(
   assume mu ~ Exponential(10.) drift Exponential(10.);
 //  printLn("<<<<<  ALIGNED: MU");
 //  printLn(">>>>>  ALIGNED: BETA");
-  assume beta ~ Exponential(10.) drift Exponential(10.);
+  assume beta ~ Exponential(1.) drift Exponential(1.);
 //  printLn("<<<<<  ALIGNED: BETA");
 
   let r = mtxCreate(3,3,

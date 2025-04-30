@@ -30,7 +30,7 @@ model function rejectAccept(
   assume mu ~ Exponential(10.) drift rbMuMove(mu);
   //printLn("<<<<<  ALIGNED: MU");
 //  printLn(">>>>>  ALIGNED: BETA");
-  assume beta ~ Exponential(10.) drift rbBetaMove(beta);
+  assume beta ~ Exponential(1.) drift rbBetaMove(beta);
   // printLn("<<<<<  ALIGNED: BETA");
 
   let r = mtxCreate(3,3,
