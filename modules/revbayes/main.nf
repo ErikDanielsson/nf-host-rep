@@ -1,5 +1,5 @@
 process run_hostrep_revbayes {
-    label 'sim'
+    label 'rb_sim'
 
     container "${ params.container_revbayes }"
 
