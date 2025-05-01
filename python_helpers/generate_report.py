@@ -51,12 +51,13 @@ outdir = glob_outdir / RUN_NAME
 datadir = outdir / "data"
 simdir = outdir / "sims"
 bindir = outdir / "bins"
-param_comb_path = bindir / "compile_id_to_configuration.csv"
+compile_params_path = bindir / "compile_id_to_configuration.csv"
+data_params_path = datadir / "param_id_to_configuration.csv"
 """
 
 read_outputs_cell_template = """
 # Read files
-df = proc_output.get_files_in_dir2(
+df = proc_output.get_files_in_dir(
     simdir,
     {
         "tppl": proc_output.get_tppl_output_pattern(),
@@ -91,12 +92,21 @@ if has_tppl:
 
 compile_params_text = """
 ### TreePPL compile params
-The following TreePPL models were run
+The following TreePPL models were compiled
 """
 
 compile_params_cell_template = """
-compile_params = proc_output.parse_compile_params(param_comb_path)
+compile_params = proc_output.parse_compile_params(compile_params_path)
 compile_params
+"""
+
+data_params_text = """
+The models were run on dataset generated with the following parameters
+"""
+
+data_params_cell_template = """
+data_params = proc_output.parse_data_params(data_params_path)
+data_params
 """
 
 missing_simulations_text = """
@@ -104,7 +114,7 @@ missing_simulations_text = """
 The following simulations failed to finish (too great RAM requirement)
 """
 missing_simulations_cell_template = """
-missing_df = proc_output.get_missing_params(df, param_comb_path)
+missing_df = proc_output.get_missing_params(df, compile_params_path)
 if not missing_df.empty:
     print(missing_df)
 else:
@@ -269,8 +279,8 @@ def generate_report(run_name, burnin=0):
     ph_path_from_self = "."
     report_name = f"report_{run_name}.gen.qmd"
 
-    groupby_keys_tppl = ["model_dir", "model_name", "genid"]
-    groupby_keys_rb = ["file_type", "genid"]
+    groupby_keys_tppl = ["model_dir", "model_name", "genid", "param_id"]
+    groupby_keys_rb = ["file_type", "genid", "param_id"]
 
     groupby_tppl_key = lambda x: (x[2], x[1], x[0])
 
@@ -355,6 +365,8 @@ def generate_report(run_name, burnin=0):
         if global_variables["has_tppl"]:
             fh.write(create_text(compile_params_text))
             fh.write(create_quarto_cell(compile_params_cell_template))
+            fh.write(create_text(data_params_text))
+            fh.write(create_quarto_cell(data_params_cell_template))
             fh.write(create_text(missing_simulations_text))
             fh.write(create_quarto_cell(missing_simulations_cell_template))
 

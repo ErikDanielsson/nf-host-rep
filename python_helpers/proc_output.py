@@ -56,29 +56,6 @@ def get_rb_output_pattern():
 def get_files_in_dir(
     dir: Path,
     patterns: dict[str, re.Pattern],
-    header=["file_type", "genid", "compile_id", "filename"],
-):
-    fns = {k: {} for k in patterns}
-    ll = []
-    for file in dir.glob("**/*"):
-        fn = file.name
-        for k, pattern in patterns.items():
-            m = pattern.match(fn)
-            if m is not None:
-                file_ids = map(int, m.groups())
-                param_id, genid, compile_id = m.groups(1)
-                param_id, genid, compile_id = int(param_id), int(genid), int(compile_id)
-                if genid not in fns[k]:
-                    fns[k][genid] = {}
-                ll.append((k, *file_ids, file))
-                fns[k][genid][compile_id] = file
-    df = pd.DataFrame(ll, columns=header)
-    return df, fns
-
-
-def get_files_in_dir2(
-    dir: Path,
-    patterns: dict[str, re.Pattern],
     header=["file_type", "param_id", "genid", "compile_id", "filename"],
 ):
     ll = []
@@ -110,6 +87,21 @@ def parse_compile_params(
         flag_df = parse_sim_flags(df)
         return pd.concat([df, flag_df], axis=1).drop(columns=["flags"])
 
+    return df.replace({np.nan: None})
+
+
+def parse_data_params(
+    fn,
+    header=["param_id", "mu", "beta", "lambda01", "lambda10", "lambda12", "lambda21"],
+    dtypes=[int, float, float, float, float, float, float],
+):
+    df = pd.read_csv(
+        fn,
+        names=header,
+        sep="\t",
+        index_col=False,
+        dtype={h: d for h, d in zip(header, dtypes)},
+    )
     return df.replace({np.nan: None})
 
 
@@ -145,14 +137,18 @@ def add_compile_params(file_df, compile_params_df):
 
 def get_missing_params(file_df, compile_param_fn):
     compile_params_df = parse_compile_params(compile_param_fn)
-    found_compile_id = file_df[["genid", "compile_id"]]
+    found_compile_id = file_df[["param_id", "genid", "compile_id"]]
     compile_ids = set(compile_params_df["compile_id"])
     missing_compile_ids = {}
-    for genid, group in found_compile_id.groupby("genid"):
+    for ids, group in found_compile_id.groupby(["param_id", "genid"]):
         existing_compile_ids = set(group["compile_id"])
-        missing_compile_ids[genid] = compile_ids - existing_compile_ids
+        missing_compile_ids[ids] = compile_ids - existing_compile_ids
     missing_df = pd.DataFrame(
-        [(gen, cid) for gen, cids in missing_compile_ids.items() for cid in cids],
+        [
+            (ids[0], ids[1], cid)
+            for ids, cids in missing_compile_ids.items()
+            for cid in cids
+        ],
         columns=["genid", "compile_id"],
     )
     return missing_df.merge(compile_params_df, on="compile_id", how="left")

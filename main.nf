@@ -52,7 +52,7 @@ workflow {
 
     tppl_lib_ch = Channel.fromPath("${params.tppl_lib_path}/*").collect()
     param_id = 0
-    gendata_params = Channel.fromPath("$baseDir/${params.gendata_params}")
+    params_config_ch = Channel.fromPath("$baseDir/${params.params_config}")
         | splitCsv(sep:"\t", header: true)
         | map {row -> [
             param_id++,
@@ -63,6 +63,12 @@ workflow {
             row.lambda12,
             row.lambda21,
         ]}
+
+    params_config_ch.collectFile(
+        name: "param_id_to_configuration.csv",
+        storeDir: file(params.datadir),
+        newLine: true
+    ) {pid, mu, beta, l0, l1, l2, l3 -> "$pid\t$mu\t$beta\t$l0\t$l1\t$l2\t$l3"}
 
     // Generate data from a coalescent model
     generate_trees(
@@ -93,7 +99,7 @@ workflow {
         revbayes_interactions_in_ch = rev_annotate_tree.out.rev_tree.join(
             generate_trees.out.host_tree
         ).join(
-            gendata_params
+            params_config_ch
         )
 
         revbayes_interactions(
@@ -114,7 +120,7 @@ workflow {
         )
         pid = 0
         params_in_ch = partial_phyjson_ch
-            .combine(gendata_params)
+            .combine(params_config_ch)
             .map {
                 gid, pjs, pid, m, b, l1, l2, l3, l4 ->
                 [gid, pid, pjs, m, b, l1, l2, l3, l4]
