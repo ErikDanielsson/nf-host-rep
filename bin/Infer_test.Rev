@@ -31,9 +31,7 @@ dat_insect <- readDiscreteCharacterData(dat_insect_fn)
 mni = 1
 mvi = 1
 n_gen = int(niter)
-n_burn = 0 
 sample_freq = int(freq_subsample) 
-tune_freq = n_burn/10
 
 n_plant_tips <- phy_plant.ntips()
 n_plant_branches <- 2 * n_plant_tips - 2
@@ -84,12 +82,15 @@ weight_switch_rates_pos_2 = 5
 weight_clock_host_2 = 5 
 weight_ch_node_2 = n_insect_branches/2
 weight_ch_branch_2 = n_insect_branches
-total_weight = (weight_physcale
+total_weight = (
+    weight_physcale
     + weight_switch_rates_pos_1 + weight_clock_host_1
     + weight_ch_node_1 + weight_ch_branch_1
     + weight_switch_rates_pos_2 + weight_clock_host_2
     + weight_ch_node_2 + weight_ch_branch_2
 )
+
+sample_freq = ceil(int(freq_subsample) / total_weight)
 
 mv[mvi++] = mvScale( phy_scale[1], weight=weight_physcale )
 mv[mvi++] = mvSimplex(switch_rates_pos, alpha=10, weight=weight_switch_rates_pos_1, tune=false)
@@ -131,8 +132,9 @@ mn[mni++] = mnCharacterHistorySummary( filename=char_sum_mn_fn,
                                        printgen=sample_freq )
 mn[mni++] = mnFile(phy_insect, filename=phy_insect_mn_fn, printgen=sample_freq)
 
+n_moves <- ceil(n_gen / total_weight)
 mdl = model(m_host)
 ch = mcmc(mdl, mn, mv)
-ch.run(ceil(n_gen / total_weight)) # RevBayes does k = total_weight moves per iteration -- adjust so that it is comparable!
+ch.run(n_moves) # RevBayes does k = total_weight moves per iteration -- adjust so that it is comparable!
 ch.operatorSummary()
 q()

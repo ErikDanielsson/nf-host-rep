@@ -49,7 +49,6 @@ workflow {
     def nsymbionts = params.nsymbionts
 
     int niter = (int)params.niter
-    int freq_subsample = (int)params.subsample
 
     tppl_lib_ch = Channel.fromPath("${params.tppl_lib_path}/*").collect()
     param_id = 0
@@ -241,8 +240,7 @@ workflow {
 
         revbayes_out_ch = run_hostrep_revbayes(
             rev_bayes_in_ch,
-            niter,
-            freq_subsample,
+            niter
         )
     }
 }

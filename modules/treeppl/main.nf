@@ -17,11 +17,15 @@ process compile_model {
     def debug_flags = params.debug_treeppl ? (
         "--debug-iterations --debug-alignment-html ${alignment_html}"
         ) : ""
+    def sampling_period_flag = params.sampling_period ? (
+        "--sampling-period ${params.sampling_period}"
+    ) : ""
     """
     tpplc ${model_path} \
         --output ${out_fn} \
         --particles ${niter} \
-        --seed ${runid} \
+        --seed ${runid * 2} \
+        ${sampling_period_flag} \
         ${debug_flags} \
         ${inference_flags}
     chmod +x ${out_fn}

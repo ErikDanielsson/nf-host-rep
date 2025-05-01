@@ -39,7 +39,9 @@ process run_interactions_tppl {
 
     script: 
     """
-    OCAMLRUNPARAM=b ./${sim_bin} ${phyjson_file} > simtree_and_interactions.${param_id}.${genid}.json 2> log.${param_id}.${genid}.txt
+    OCAMLRUNPARAM=b ./${sim_bin} \
+        ${phyjson_file} > simtree_and_interactions.${param_id}.${genid}.json
+        2> log.${param_id}.${genid}.txt \
     """
 }
 
