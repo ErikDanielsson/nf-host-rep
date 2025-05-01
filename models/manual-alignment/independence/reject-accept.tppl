@@ -5,7 +5,7 @@ import "helpers.tppl"
 import "belief-propagation.tppl"
 import "dist-helpers.tppl"
 import "full-model.tppl"
-import "print-helpers.tppl"
+// import "print-helpers.tppl"
 
 type ReturnType = ReturnType{
   lambda: Real[], mu: Real, beta: Real, tree: HistoryTree
@@ -21,10 +21,10 @@ model function rejectAccept(
   dMean: Real,
   tune: Real
 ): ReturnType {
-  printLn(">>>>>  ALIGNED: LAMBDA");
+//  printLn(">>>>>  ALIGNED: LAMBDA");
   assume lambda ~ Dirichlet([1., 1., 1., 1.]) drift Dirichlet([1., 1., 1., 1.]);
-  printLn("<<<<<  ALIGNED: LAMBDA");
-  printSeq(lambda, 1, 4);
+//  printLn("<<<<<  ALIGNED: LAMBDA");
+//  printSeq(lambda, 1, 4);
 //  printLn(">>>>>  ALIGNED: MU");
   assume mu ~ Exponential(10.) drift Exponential(10.);
   //printLn("<<<<<  ALIGNED: MU");
@@ -257,6 +257,7 @@ function sampleBranch(
   if allTimesValidBranch(startRep, orderedEvents, 1, nEvents, nhosts) {
     // The branch is correct along the full history, 
     // accept and calculate the true weight of the sample
+    /*
     printLn("        accepting sample");
     printLn("    UNORDERED HISTORY");
     printEvents(unorderedBranch.history);
@@ -266,7 +267,7 @@ function sampleBranch(
     printSeqInt(startRep, 1, nhosts);
     printLn("Final repertoire");
     printSeqInt(finalRep, 1, nhosts);
-
+  */
     let logExcess = fullModelWeight(
       1, startRep, finalRep, startAge, finalAge, orderedEvents, nEvents, nhosts, modelParams
     );
@@ -278,7 +279,7 @@ function sampleBranch(
     };
   } else {
     // The repertoire was invalid somewhere along the branch, reject and sample again
-    printLn("--------REJECTING-SAMPLE");
+    // printLn("--------REJECTING-SAMPLE");
     return sampleBranch(
       startRep, finalRep, startAge, finalAge, nhosts, modelParams
     );
@@ -331,7 +332,7 @@ function sampleUnorderedBranch(
       };
     } else {
       if rejectionDepth <= _MAX_REJECTION_DEPTH_HOST {
-        printLn("----rejection_host");
+        // printLn("----rejection_host");
         return sampleUnorderedBranch(
           startRep, finalRep, startAge, finalAge, hostIndex, nhosts, embeddedQMatrix, rejectionDepth + 1
         );
@@ -397,7 +398,7 @@ function sampleHostHistory(
     // printLn(">>>>>UNALIGNED: CATEGORICAL");
     let nextState = sampleNextEvent(startState, embeddedQMatrix);
     //assume nextState ~ Categorical(param);
-    printLn(join(["<<<<<UNALIGNED Trunc: CATEGORICAL ", int2string(host)]));
+    // printLn(join(["<<<<<UNALIGNED Trunc: CATEGORICAL ", int2string(host)]));
     let param = embeddedQMatrix.transitionProbs[startState + 1];
 
     let stateLogDebt = categoricalLogPdf(nextState, param); 
@@ -443,7 +444,7 @@ function sampleHostHistory(
       let nextState = sampleNextEvent(startState, embeddedQMatrix);
       let param = embeddedQMatrix.transitionProbs[startState + 1];
       // assume nextState ~ Categorical(param);
-      printLn(join(["<<<<<UNALIGNED      : CATEGORICAL ", int2string(host)]));
+      // printLn(join(["<<<<<UNALIGNED      : CATEGORICAL ", int2string(host)]));
 
       let stateLogDebt = categoricalLogPdf(nextState, param); 
 

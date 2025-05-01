@@ -93,21 +93,21 @@ function sampleNextEvent(
   // Categorical distribution seems to sometimes fail when sampling 
   // from a trivial probability vector
   if currState == 0 {
-      printLn("Deterministic move 0->1");
+//    printLn("Deterministic move 0->1");
     return 1;
   } else {
     if currState == 2 {
-      printLn("Deterministic move 2->1");
+//    printLn("Deterministic move 2->1");
       return 1;
     } else {
       let param = embeddedQMatrix.transitionProbs[currState + 1];
       assume nextState ~ Categorical(param);
-      printLn(join([
-        "Sampling move 1->", int2string(nextState), " with param ",
-        real2string(param[1]), ", ",
-        real2string(param[2]), ", ",
-        real2string(param[3])
-      ]));
+//    printLn(join([
+//      "Sampling move 1->", int2string(nextState), " with param ",
+//      real2string(param[1]), ", ",
+//      real2string(param[2]), ", ",
+//      real2string(param[3])
+//    ]));
       return nextState;
     }
   }
