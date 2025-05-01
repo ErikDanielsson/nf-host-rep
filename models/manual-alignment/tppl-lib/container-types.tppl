@@ -52,3 +52,11 @@ type EmbeddedMarkovChainMatrix = EmbeddedMarkovChainMatrix {
   mat: Matrix[Real]
 }
 
+// Container type for a CTMC in uniformization form
+type UniformizationParams = UniformizationParams {
+  uMatrix: Matrix[Real], // The uniformized transition matrix
+  nu: Real, // The dominating rate of the CTMC
+  qMatrix: Matrix[Real]
+}
+
+

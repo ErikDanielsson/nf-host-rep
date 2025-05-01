@@ -1,0 +1,77 @@
+import "lib.mc"
+import "dist-helpers.tppl"
+
+type MCTransition {
+  fromState: Int,
+  toState: Int
+}
+
+type MCAndDebt {
+  transitions: MCTransition[],
+  logDebt: Real
+}
+
+// Forward-backward algorithm for sampling a Markov chain conditioned on start and end states
+function forwardsBackardsAlgorithm(
+  kernel: Matrix[Real],
+  startState: Int,
+  endState: Int,
+  nSteps: Int
+): MCAndDebt {
+  // The backward kernel is the transpose
+  let backwardsKernel = mtxTrans(kernel);
+  // Compute the backwards messages
+  let nStates = dim(kernel)[1];
+  // The end state message should be an indicator vector for the final state
+  let endStateIndicator = mtxRowKroneckerDelta(incr(endIndex), nStates)
+  let backwardMsgs = fold(
+    function (matSeq: Matrix[Real][], i: Int) {
+      let prev = matSeq[1];
+      let next = mtxMul(prev, mat);
+      return cons(next, matSeq);
+    },
+    [endStateIndicator],
+    range(1, nSteps, 1)
+  );
+  // Sample the chain forwards in time
+  let samples = sampleForwards(0, kernel, startState, backwardMsgs, nSteps);
+  return samples;
+}
+
+// Sample the markov chain forwards in time, using the information about the end state in the backwards messages
+function sampleForwards(
+  i: Int,
+  kernel: Matrix[Real],
+  prevState: Int,
+  backwardMsgs: Matrix[Real][],
+  nSteps: Int
+): MCAndDebt {
+  if i < nSteps {
+    let forwardMsg = mtxGetRow(prevState + 1, kernel); // The forward transition probabilities is just the correct row vector of the kernel
+    let backwardMsg = backwardMsgs[nSteps - i]; // Get the backward transition probabilities 
+    let totMsg = mtxNormalize(mtxElemMul(forwardMsg, backwardMsg));
+    let param = rowMatrixToSeq(totMsg);
+    assume sampleState ~ Categorical(param); // Sample the next state
+    let currDebt = categoricalLogPdf(sampleState, param)
+    let restOfChain = sampleStateForwards(i + 1, kernel, sample, backwardMsgs, nSteps);
+    return UBranchEventsAndDebt{
+      transitions = cons(
+        MCTransition {fromState = prevState, toState = sampleState},
+        restOfChain.events
+      )
+      logDebt = currDebt + restOfChain.logDebt
+    };
+  } else {
+    return MCAndDebt { transitions = [], logDebt = 0.0};
+  }
+}
+
+function rowMatToSeq(mat: Matrix[Real]): Real[] {
+  let size = dim(mat)[1];
+  return sapply(
+    range(1, size + 1, 1),
+    function (i: Int) {
+      return mtxGet(i, 1, mat);
+    }
+  );
+}
