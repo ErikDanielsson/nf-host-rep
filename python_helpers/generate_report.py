@@ -56,7 +56,7 @@ param_comb_path = bindir / "compile_id_to_configuration.csv"
 
 read_outputs_cell_template = """
 # Read files
-df, tppl_fns = proc_output.get_files_in_dir(
+df = proc_output.get_files_in_dir2(
     simdir,
     {
         "tppl": proc_output.get_tppl_output_pattern(),

@@ -46,11 +46,11 @@ def get_temp_file(fn, tempdir_suffix=""):
 
 
 def get_tppl_output_pattern():
-    return re.compile(r"output\.(\d+)\.(\d+)\.json")
+    return re.compile(r"output\.(\d+)\.(\d+)\.(\d+)\.json")
 
 
 def get_rb_output_pattern():
-    return re.compile(r"out\.(\d+)\.(\d+)\.log$")
+    return re.compile(r"out\.(\d+)\.(\d+)\.(\d+)\.log$")
 
 
 def get_files_in_dir(
@@ -66,14 +66,31 @@ def get_files_in_dir(
             m = pattern.match(fn)
             if m is not None:
                 file_ids = map(int, m.groups())
-                genid, compile_id = m.groups(1)
-                genid, compile_id = int(genid), int(compile_id)
+                param_id, genid, compile_id = m.groups(1)
+                param_id, genid, compile_id = int(param_id), int(genid), int(compile_id)
                 if genid not in fns[k]:
                     fns[k][genid] = {}
                 ll.append((k, *file_ids, file))
                 fns[k][genid][compile_id] = file
     df = pd.DataFrame(ll, columns=header)
     return df, fns
+
+
+def get_files_in_dir2(
+    dir: Path,
+    patterns: dict[str, re.Pattern],
+    header=["file_type", "param_id", "genid", "compile_id", "filename"],
+):
+    ll = []
+    for file in dir.glob("**/*"):
+        fn = file.name
+        for k, pattern in patterns.items():
+            m = pattern.match(fn)
+            if m is not None:
+                file_ids = map(int, m.groups())
+                ll.append((k, *file_ids, file))
+    df = pd.DataFrame(ll, columns=header)
+    return df
 
 
 def parse_compile_params(
