@@ -49,13 +49,12 @@ function fullModelWeight(
     let newRep = updateRepertoire(currRep, nextEvent, nhosts);
 // printSeqInt(currRep, 1, 3);
 // printSeqInt(newRep, 1, 3);
-    /*
-// printLn("Current");
-// printLn("Event");
-// printLn(join([int2string(nextEvent.host), ": ", int2string(nextEvent.fromState), "->", int2string(nextEvent.toState)]));
-// printLn("New");
-// printSeqInt(newRep, 1, 3);
-    */
+    printLn("Current");
+    printSeqInt(currRep, 1, 3);
+    printLn("Event");
+    printLn(join([int2string(nextEvent.host), ": ", int2string(nextEvent.fromState), "->", int2string(nextEvent.toState)]));
+    printLn("New");
+    printSeqInt(newRep, 1, 3);
     return thisWeight + fullModelWeight(
       nextIndex + 1,
       newRep,
@@ -108,8 +107,8 @@ function getTotalRate(
 
 function getRate(currRep: Int[], nextEvent: Event, modelParams: ModelParams) {
   let hostIndex = nextEvent.host;
-// printSeqInt(currRep, 1, 3);
-// printLn(join([int2string(nextEvent.host), ": ", int2string(nextEvent.fromState), "->", int2string(nextEvent.toState)]));
+  printSeqInt(currRep, 1, 3);
+  printLn(join([int2string(nextEvent.host), ": ", int2string(nextEvent.fromState), "->", int2string(nextEvent.toState)]));
   if nextEvent.fromState > nextEvent.toState {
     //printLn("Loss event");
     return getLossRate(currRep, hostIndex, modelParams);
@@ -143,9 +142,9 @@ function getGainRate (
 ): Real {
   let fromState = repertoire[hostIndex];
   let toState = fromState + 1;
-// printLn(join(["    gain rate get mtx ", int2string(fromState + 1), " ", int2string(toState + 1)]));
+  printLn(join(["    gain rate get mtx ", int2string(fromState + 1), " ", int2string(toState + 1)]));
   let baseRate = mtxGet(fromState + 1, toState + 1, modelParams.embeddedQMatrix.mat);
-  //printLn("After Get base rate");
+  printLn("After Get base rate");
   // We need to add the phylogenetic influence to the rate
   // since we have a gain event
   if fromState == 0 {

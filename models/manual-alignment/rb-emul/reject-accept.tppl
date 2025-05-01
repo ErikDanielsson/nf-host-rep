@@ -252,28 +252,34 @@ function sampleBranch(
 
   // Sort the events
   // printLn(join(["    history length ", int2string(length(unorderedBranch.history))]));
-  let orderdEvents = qSort(compAge, unorderedBranch.history);
+  let orderedEvents = qSort(compAge, unorderedBranch.history);
   // printLn(join(["    sorted"]));
-  let nEvents = length(orderdEvents);
-  if allTimesValidBranch(startRep, orderdEvents, 1, nEvents, nhosts) {
+  let nEvents = length(orderedEvents);
+  if allTimesValidBranch(startRep, orderedEvents, 1, nEvents, nhosts) {
     // The branch is correct along the full history, 
     // accept and calculate the true weight of the sample
-    // printLn("        accepting sample");
-//  printSeqInt(startRep, 1, nhosts);
-//  printSeqInt(finalRep, 1, nhosts);
-//  printEvents(orderdEvents);
+    printLn("        accepting sample");
+    printLn("    UNORDERED HISTORY");
+    printEvents(unorderedBranch.history);
+    printEvents(orderedEvents);
+
+    printLn("Starting repertoire");
+    printSeqInt(startRep, 1, nhosts);
+    printLn("Final repertoire");
+    printSeqInt(finalRep, 1, nhosts);
+
     let logExcess = fullModelWeight(
-      1, startRep, finalRep, startAge, finalAge, orderdEvents, nEvents, nhosts, modelParams
+      1, startRep, finalRep, startAge, finalAge, orderedEvents, nEvents, nhosts, modelParams
     );
     // Return the branch sample with both the debt and the excess
     return CorrectedBranchSample {
-      history = orderdEvents,
+      history = orderedEvents,
       logDebt = unorderedBranch.logDebt,
       logExcess = logExcess
     };
   } else {
     // The repertoire was invalid somewhere along the branch, reject and sample again
-    // printLn("        rejecting sample");
+    printLn("--------REJECTING-SAMPLE");
     return sampleBranch(
       startRep, finalRep, startAge, finalAge, nhosts, modelParams
     );
@@ -326,6 +332,7 @@ function sampleUnorderedBranch(
       };
     } else {
       if rejectionDepth <= _MAX_REJECTION_DEPTH_HOST {
+        printLn("----rejection_host");
         return sampleUnorderedBranch(
           startRep, finalRep, startAge, finalAge, hostIndex, nhosts, embeddedQMatrix, rejectionDepth + 1
         );
@@ -388,10 +395,12 @@ function sampleHostHistory(
     let eventTime = startAge - t;
 
     // Sample the next event
-    let param = embeddedQMatrix.transitionProbs[startState + 1];
     // printLn(">>>>>UNALIGNED: CATEGORICAL");
-    assume nextState ~ Categorical(param);
-    // printLn("<<<<<UNALIGNED: CATEGORICAL");
+    let nextState = sampleNextEvent(startState, embeddedQMatrix);
+    //assume nextState ~ Categorical(param);
+    printLn(join(["<<<<<UNALIGNED Trunc: CATEGORICAL ", int2string(host)]));
+    let param = embeddedQMatrix.transitionProbs[startState + 1];
+
     let stateLogDebt = categoricalLogPdf(nextState, param); 
     // printLn(join(["Recurse 1 ", real2string(eventTime)]));
     let restOfHistory = sampleHostHistory(nextState, finalState, eventTime, finalAge, host, embeddedQMatrix, stepIndex + 1);
@@ -431,10 +440,12 @@ function sampleHostHistory(
     } else {
 
       // Sample the next transition
-      let param = embeddedQMatrix.transitionProbs[startState + 1];
       // printLn(">>>>>UNALIGNED: CATEGORICAL");
-      assume nextState ~ Categorical(param);
-      // printLn("<<<<<UNALIGNED: CATEGORICAL");
+      let nextState = sampleNextEvent(startState, embeddedQMatrix);
+      let param = embeddedQMatrix.transitionProbs[startState + 1];
+      // assume nextState ~ Categorical(param);
+      printLn(join(["<<<<<UNALIGNED      : CATEGORICAL ", int2string(host)]));
+
       let stateLogDebt = categoricalLogPdf(nextState, param); 
 
       // Record the event time
