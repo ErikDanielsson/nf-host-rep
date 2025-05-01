@@ -22,10 +22,10 @@ model function rejectAccept(
   dMean: Real,
   tune: Real
 ): ReturnType {
-//  printLn(">>>>>  ALIGNED: LAMBDA");
+  printLn(">>>>>  ALIGNED: LAMBDA");
   assume lambda ~ Dirichlet([1., 1., 1., 1.]) drift rbLambdaMove(lambda);
-  // printSeq(lambda, 1, 4);
-  //printLn("<<<<<  ALIGNED: LAMBDA");
+  printLn("<<<<<  ALIGNED: LAMBDA");
+  printSeq(lambda, 1, 4);
 //  printLn(">>>>>  ALIGNED: MU");
   assume mu ~ Exponential(10.) drift rbMuMove(mu);
   //printLn("<<<<<  ALIGNED: MU");

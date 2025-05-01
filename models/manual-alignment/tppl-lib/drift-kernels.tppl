@@ -3,7 +3,7 @@ import "stdlib::seq.mc"
  * Library of drift kernels emulating the drift kernels from the RevBayes implementation
  */
 
-function simplexMove(x: Real[], alpha: Real) {
+function simplexMove(x: Real[], alpha: Real, epsilon: Real) {
   /*
    * Drift kernel for Dirichlet distribution aka. probability simplex 
    *
@@ -11,12 +11,28 @@ function simplexMove(x: Real[], alpha: Real) {
    * The `alpha` parameter is the sum of the rates for each parameter and thus
    * controls the width of the distribution (large alpha -- narrow distribution)
    * 
+   * Due to numerical errors, if the distribution goes to closely to one of the 
+   * boundaries the OWL Dirichlet distribution might sample values on the 
+   * boundary. This crashes the program. To avoid the situation we perturb the
+   * current value so it falls safely in the interior of the simplex
+   * 
    * RevBayes source at:
    * https://github.com/revbayes/revbayes/blob/master/src/core/moves/proposal/simplex/DirichletSimplexProposal.cpp
    *
    */
-  let new_params = sapply(x, function (a: Real) { return a * alpha; });
-  return Dirichlet(new_params);
+  let newParamFun = function (a: Real) {
+    if a > epsilon {
+      if a < 1. - epsilon {
+        return a * alpha;
+      } else {
+        return (a - epsilon) * alpha;
+      }
+    } else {
+      return (a + epsilon) * alpha;
+    }
+  };
+  let newParams = sapply(x, newParamFun);
+  return Dirichlet(newParams);
 }
 
 function stochSimplexMove(

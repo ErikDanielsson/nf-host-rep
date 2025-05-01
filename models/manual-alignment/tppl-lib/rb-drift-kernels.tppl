@@ -4,11 +4,12 @@ function rbLambdaMove(
   x: Real[]
 ) {
   /*
-  * This hard codes the _most common_ simplex move used for the switch rate parameter in the
+  * This hard codes the _most_common_ simplex move used for the switch rate parameter in the
   * RevBayes implementation. See docs/revbayes_drift_kernels.md for more details
   */
-  let alpha = 25.;
-  return simplexMove(x, alpha);
+  let _EPSILON = 1e-3; // Set the numerical error constant
+  let alpha = 25.; 
+  return simplexMove(x, alpha, _EPSILON);
 }
 
 function rbBetaMove(
