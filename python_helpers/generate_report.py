@@ -121,6 +121,32 @@ else:
     print("All runs finished!")
 """
 
+tppl_log_text = """
+### Debug output
+Below is a summary of the debug available from the MCMC
+"""
+tppl_log_cell_template = """
+log_df = proc_output.get_files_in_dir(
+    simdir,
+    {
+        "tppl_log": proc_output.get_tppl_log_pattern(),
+    },
+)
+parsed_log_df = proc_output.parse_tppl_logs(log_df, compile_params)
+columns = [
+    "model_dir",
+    "model_name",
+    "count",
+    "avg_accept",
+    "avg_duration_ms",
+    "param_id",
+    "genid",
+    "runid",
+]
+parsed_log_df.sort_values(by=["compile_id", "param_id"])[columns]
+"""
+
+
 create_multi_chain_tppl_cell_template = """
 df_tppl_with_compile_params = proc_output.add_compile_params(
     df_tppl, compile_params
@@ -271,8 +297,8 @@ def create_multi_fig(fig_name, images_and_captions):
 def generate_report(run_name, burnin=0):
     # Set .gen.qmd as file ending so that we can remove
     # any automatically generated report files
-    make_tppl_trace = True
-    make_rb_trace = True
+    make_tppl_trace = False
+    make_rb_trace = False
     make_tppl_tree_plot = False
     incremental = True
     ph_path_from_base_dir = "python_helpers/"
@@ -317,6 +343,13 @@ def generate_report(run_name, burnin=0):
             subst_variables(
                 create_multi_chain_tppl_cell_template,
                 {"___groupby_keys___": groupby_keys_tppl},
+            ),
+            global_variables,
+        )
+        exec(
+            subst_variables(
+                tppl_log_cell_template,
+                {},
             ),
             global_variables,
         )
@@ -369,6 +402,8 @@ def generate_report(run_name, burnin=0):
             fh.write(create_quarto_cell(data_params_cell_template))
             fh.write(create_text(missing_simulations_text))
             fh.write(create_quarto_cell(missing_simulations_cell_template))
+            fh.write(tppl_log_text)
+            fh.write(create_quarto_cell(tppl_log_cell_template))
 
         if global_variables["has_rb"]:
             fh.write(

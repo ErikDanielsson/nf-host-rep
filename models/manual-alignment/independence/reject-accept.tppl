@@ -5,6 +5,7 @@ import "helpers.tppl"
 import "belief-propagation.tppl"
 import "dist-helpers.tppl"
 import "full-model.tppl"
+import "custom-debug-info.tppl"
 
 type ReturnType = ReturnType{
   lambda: Real[], mu: Real, beta: Real, tree: HistoryTree
@@ -153,6 +154,13 @@ function sampleTreeHistory(
       modelParams,
       0
     );
+    debugNode(
+      "Leaf",
+      tree.label,
+      branchSample.logDebt,
+      branchSample.logExcess,
+      0.0
+    );
     // We are aligned so we can weight the program here (shouldn't matter for MCMC)
     if branchSample.success {
       logWeight branchSample.logExcess - branchSample.logDebt;
@@ -182,6 +190,13 @@ function sampleTreeHistory(
       nhosts,
       modelParams,
       0
+    );
+    debugNode(
+      "Node",
+      tree.label,
+      branchSample.logDebt,
+      branchSample.logExcess,
+      nodeLogDebt
     );
     // We are aligned so we can weight the program here (shouldn't matter for MCMC)
     if branchSample.success {

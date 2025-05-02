@@ -49,6 +49,10 @@ def get_tppl_output_pattern():
     return re.compile(r"output\.(\d+)\.(\d+)\.(\d+)\.json")
 
 
+def get_tppl_log_pattern():
+    return re.compile(r"log\.(\d+)\.(\d+)\.(\d+)\.txt")
+
+
 def get_rb_output_pattern():
     return re.compile(r"out\.(\d+)\.(\d+)\.(\d+)\.log$")
 
@@ -257,6 +261,48 @@ def read_tppl_file(fn, with_file=True, tempdir_suffix=""):
         df.to_csv(temp_fn)
 
     return df
+
+
+def read_tppl_log_file(fn):
+    stats = {
+        "accepted": 0,
+        "rejected": 0,
+        "duration_ms": [],
+    }
+    with open(fn) as fh:
+        for line in fh:
+            # Check if the line looks like json
+            if line.startswith("{"):
+                parsed_line = json.loads(line)
+                if parsed_line["accepted"]:
+                    stats["accepted"] += 1
+                else:
+                    stats["rejected"] += 1
+                stats["duration_ms"].append(parsed_line["durationMs"])
+    return stats
+
+
+def process_tppl_log_file(fn):
+    stats = read_tppl_log_file(fn)
+    count = len(stats["duration_ms"])
+    avg_accept = stats["accepted"] / count
+    avg_duration_ms = sum(stats["duration_ms"]) / count
+    return {
+        "count": count,
+        "avg_accept": avg_accept,
+        "avg_duration_ms": avg_duration_ms,
+    }
+
+
+def parse_tppl_logs(
+    log_df, compile_params_df, fn_col="filename", merge_col="compile_id"
+):
+    parse_df = log_df[fn_col].apply(process_tppl_log_file).apply(pd.Series)
+    log_df = pd.concat([log_df, parse_df], axis=1).drop(
+        columns=["filename", "file_type"]
+    )
+    full_df = log_df.merge(compile_params_df, on=merge_col, how="left")
+    return full_df
 
 
 def get_json_tree_tppl(fn):

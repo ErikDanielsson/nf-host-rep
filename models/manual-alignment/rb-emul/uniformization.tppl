@@ -5,6 +5,8 @@ import "helpers.tppl"
 import "belief-propagation.tppl"
 import "dist-helpers.tppl"
 import "full-model.tppl"
+import "uniformization-helpers.tppl"
+import "forward-backward-algorithm.tppl"
 import "rb-drift-kernels.tppl"
 import "custom-debug-info.tppl"
 
@@ -22,9 +24,9 @@ model function rejectAccept(
   dMean: Real,
   tune: Real
 ): ReturnType {
-//  printLn(">>>>>  ALIGNED: LAMBDA");
+//printLn(">>>>>  ALIGNED: LAMBDA");
   assume lambda ~ Dirichlet([1., 1., 1., 1.]) drift rbLambdaMove(lambda);
-//  printLn("<<<<<  ALIGNED: LAMBDA");
+//printLn("<<<<<  ALIGNED: LAMBDA");
 //  printLn(">>>>>  ALIGNED: MU");
   assume mu ~ Exponential(10.) drift rbMuMove(mu);
   //printLn("<<<<<  ALIGNED: MU");
@@ -72,12 +74,14 @@ model function rejectAccept(
     embeddedQMatrix = embeddedQMatrix,
     meanDist = dMean
   };
+  let unifParams = rateMatrixToUnifMatrix(qMatrix);
   let rootAge = postorderTree.age;
   let leftRepertoireTree = sampleTreeHistory(
-    postorderTree.left, nhosts, leftMsg, rootRep, rootAge, modelParams
+    postorderTree.left, nhosts, leftMsg, rootRep, rootAge, modelParams, unifParams
   );
   let rightRepertoireTree = sampleTreeHistory(
-    postorderTree.right, nhosts, rightMsg, rootRep, rootAge, modelParams
+    postorderTree.right, nhosts, rightMsg, rootRep, rootAge, modelParams, unifParams
+
   );
 
   // Construct the root node of the repertoire tree
@@ -140,7 +144,8 @@ function sampleTreeHistory(
   preorderMsg: Matrix[Real],
   parentRep: Int[],
   parentAge: Real,
-  modelParams: ModelParams
+  modelParams: ModelParams,
+  unifParams: UniformizationParams
 ): HistoryTree {
   if tree is MsgLeaf {
     // We are at a leaf, so we don't need to sample the interactions
@@ -153,6 +158,7 @@ function sampleTreeHistory(
       tree.age,
       nhosts,
       modelParams,
+      unifParams,
       0
     );
     debugNode(
@@ -190,6 +196,7 @@ function sampleTreeHistory(
       tree.age,
       nhosts,
       modelParams,
+      unifParams,
       0
     );
     debugNode(
@@ -203,7 +210,6 @@ function sampleTreeHistory(
     if branchSample.success {
       logWeight branchSample.logExcess - branchSample.logDebt - nodeLogDebt;
     } else {
-      // We failed to sample a correct branch, set program weight to zero
       weight 0.0;
     }
 
@@ -214,10 +220,10 @@ function sampleTreeHistory(
 
     // Sample the two subtrees
     let left = sampleTreeHistory(
-      tree.left, nhosts, leftMsg, rep, tree.age, modelParams
+      tree.left, nhosts, leftMsg, rep, tree.age, modelParams, unifParams
     );
     let right = sampleTreeHistory(
-      tree.right, nhosts, rightMsg, rep, tree.age, modelParams
+      tree.right, nhosts, rightMsg, rep, tree.age, modelParams, unifParams
     );
 
     return HistoryNode {
@@ -238,44 +244,45 @@ function sampleBranch(
   finalAge: Real,
   nhosts: Int,
   modelParams: ModelParams,
+  unifParams: UniformizationParams,
   rejectionDepth: Int
 ): CorrectedBranchSample {
   let _MAX_REJECTION_DEPTH_BRANCH = 100;
   if rejectionDepth <= _MAX_REJECTION_DEPTH_BRANCH {
     // Sample the events per host
     let unorderedBranch = sampleUnorderedBranch(
-      startRep, finalRep, startAge, finalAge, 1, nhosts, modelParams.embeddedQMatrix, 1
+      startRep, finalRep, startAge, finalAge, 1, nhosts, unifParams
     );
-    if unorderedBranch.success {
-      // All host histories were sampled correctly, sort the events
-      let orderedEvents = qSort(compAge, unorderedBranch.history);
-      let nEvents = length(orderedEvents);
-      if allTimesValidBranch(startRep, orderedEvents, 1, nEvents, nhosts) {
-        // The branch is correct along the full history, 
-        // accept and calculate the true weight of the sample
-        let logExcess = fullModelWeight(
-          1, startRep, finalRep, startAge, finalAge, orderedEvents, nEvents, nhosts, modelParams
-        );
-        // Return the branch sample with both the debt and the excess
-        return CorrectedBranchSample {
-          history = orderedEvents,
-          logDebt = unorderedBranch.logDebt,
-          logExcess = logExcess,
-          success = true
-        };
-      }
+
+    // Sort the events
+    let orderedEvents = qSort(compAge, unorderedBranch.history);
+    let nEvents = length(orderedEvents);
+    if allTimesValidBranch(startRep, orderedEvents, 1, nEvents, nhosts) {
+      // The branch is correct along the full history, 
+      // accept and calculate the true weight of the sample
+      let logExcess = fullModelWeight(
+        1, startRep, finalRep, startAge, finalAge, orderedEvents, nEvents, nhosts, modelParams
+      );
+      // Return the branch sample with both the debt and the excess
+      return CorrectedBranchSample {
+        history = orderedEvents,
+        logDebt = unorderedBranch.logDebt,
+        logExcess = logExcess,
+        success = true
+      };
+    } else {
+      // The repertoire was invalid somewhere along the branch, reject and sample again
+      return sampleBranch(
+        startRep,
+        finalRep,
+        startAge,
+        finalAge,
+        nhosts,
+        modelParams,
+        unifParams,
+        rejectionDepth + 1
+      );
     }
-    // Either one of the hosts failed to be sampled correctly
-    // or the history was invalid somewhere along the branch
-    return sampleBranch(
-      startRep,
-      finalRep,
-      startAge,
-      finalAge,
-      nhosts,
-      modelParams,
-      rejectionDepth + 1
-    );
   } else {
     // We ran out of rejection depth for the branch
     return CorrectedBranchSample {
@@ -308,37 +315,21 @@ function sampleUnorderedBranch(
   finalAge: Real,
   hostIndex: Int,
   nhosts: Int,
-  embeddedQMatrix: EmbeddedMarkovChainMatrix,
-  rejectionDepth: Int
+  unifParams: UniformizationParams
 ): BranchSample {
-  let _MAX_REJECTION_DEPTH_HOST = 100;
   // Note that startAge > finalAge since the tree is moving forwards in time
   if hostIndex <= nhosts {
     let hostHistory = sampleHostHistory(
-      startRep[hostIndex], finalRep[hostIndex], startAge, finalAge, hostIndex, embeddedQMatrix, 1
+      startRep[hostIndex], finalRep[hostIndex], startAge, finalAge, hostIndex, unifParams
     );
-    if hostHistory.success {
-      let otherHostHistories = sampleUnorderedBranch(
-        startRep, finalRep, startAge, finalAge, hostIndex + 1, nhosts, embeddedQMatrix, 0
-      );
-      return BranchSample {
-        history = join([hostHistory.history, otherHostHistories.history]),
-        logDebt = hostHistory.logDebt + otherHostHistories.logDebt,
-        success = otherHostHistories.success
-      };
-    } else {
-      if rejectionDepth <= _MAX_REJECTION_DEPTH_HOST {
-        return sampleUnorderedBranch(
-          startRep, finalRep, startAge, finalAge, hostIndex, nhosts, embeddedQMatrix, rejectionDepth + 1
-        );
-      } else {
-        return BranchSample {
-          history = [],
-          logDebt = -log(0.),
-          success = false
-        };
-      }
-    }
+    let otherHostHistories = sampleUnorderedBranch(
+      startRep, finalRep, startAge, finalAge, hostIndex + 1, nhosts, unifParams
+    );
+    return BranchSample {
+      history = join([hostHistory.history, otherHostHistories.history]),
+      logDebt = hostHistory.logDebt + otherHostHistories.logDebt,
+      success = otherHostHistories.success
+    };
   } else {
     return BranchSample {
       history = [],
@@ -355,98 +346,60 @@ function sampleHostHistory(
   startAge: Real,
   finalAge: Real,
   host: Int,
-  embeddedQMatrix: EmbeddedMarkovChainMatrix,
-  stepIndex: Int
+  unifParams: UniformizationParams
 ): BranchSample {
-  let totalRate = embeddedQMatrix.totalRates[startState + 1];
-  if startState != finalState && stepIndex == 1 {
-    // If there is a mutation on the interval, sample the first event from a truncated exponential
+  // Sample the number of events on the branch
+  assume u ~ Uniform(0., 1.);
+  let nEventsAndDebt = invTransSampleNEvents(
+    u, unifParams, startAge - finalAge, startState, finalState
+  );
+  let nEvents = nEventsAndDebt.n;
+  let nEventsDebt = nEventsAndDebt.logProb;
 
-    // printLn(">>>>>UNALIGNED: TRUNCATED EXPONENTIAL");
-    let t = sampleTruncatedExponential(totalRate, startAge - finalAge);
-    // printLn("<<<<<UNALIGNED: TRUNCATED EXPONENTIAL");
-    let timeLogDebt = truncatedExponentialLogPdf(t, totalRate, startAge - finalAge);
-    let eventTime = startAge - t;
+  // Sample when they occur
+  let eventTimesAndDebt = getEventTimes(nEvents, startAge, finalAge);
+  let eventTimes = eventTimesAndDebt.eventTimes;
+  let eventTimesDebt = eventTimesAndDebt.logDebt;
 
-    // Sample the next event
-    // printLn(">>>>>UNALIGNED: CATEGORICAL");
-    let nextState = sampleNextEvent(startState, embeddedQMatrix);
-    // printLn(join(["<<<<<UNALIGNED Trunc: CATEGORICAL ", int2string(host)]));
-    let param = embeddedQMatrix.transitionProbs[startState + 1];
-
-    let stateLogDebt = categoricalLogPdf(nextState, param); 
-    let restOfHistory = sampleHostHistory(nextState, finalState, eventTime, finalAge, host, embeddedQMatrix, stepIndex + 1);
-    return BranchSample {
-      history = cons(
-        Event { eventTime = eventTime, fromState = startState, toState = nextState, host = host },
-        restOfHistory.history
-      ),
-      logDebt = stateLogDebt + timeLogDebt + restOfHistory.logDebt,
-      success = restOfHistory.success
-    };
-
-  } else {
-    // If the final state does not equal the start state, then we don't want to
-    // force there to be events in the remaining interval
-    // printLn(">>>>>UNALIGNED: EXPONENTIAL");
-    assume t ~ Exponential(totalRate);
-    // printLn("<<<<<UNALIGNED: EXPONENTIAL");
-    let timeLogDebt = exponentialLogPdf(t, totalRate);
-    if startAge - t < finalAge {
-      // We overshoot so we are finished, and just save the debt
-      if startState == finalState {
-        return BranchSample {
-          history = [],
-          logDebt = timeLogDebt,
-          success = true
-        };
-      } else {
-        return BranchSample {
-          history = [],
-          logDebt = timeLogDebt,
-          success = false
-        };
-      }
-    } else {
-
-      // Sample the next transition
-      // printLn(">>>>>UNALIGNED: CATEGORICAL");
-      let nextState = sampleNextEvent(startState, embeddedQMatrix);
-      let param = embeddedQMatrix.transitionProbs[startState + 1];
-      // assume nextState ~ Categorical(param);
-      // printLn(join(["<<<<<UNALIGNED      : CATEGORICAL ", int2string(host)]));
-
-      let stateLogDebt = categoricalLogPdf(nextState, param); 
-
-      // Record the event time
-      let eventTime = startAge - t;
-
-      let restOfHistory = sampleHostHistory(nextState, finalState, eventTime, finalAge, host, embeddedQMatrix, stepIndex + 1);
-      return BranchSample {
-        history = cons(
-          Event { eventTime = eventTime, fromState = startState, toState = nextState, host = host },
-          restOfHistory.history
-        ),
-        logDebt = stateLogDebt + timeLogDebt + restOfHistory.logDebt,
-        success = restOfHistory.success
+  // Sample how they occur
+  let markovChain = forwardsBackardsAlgorithm(
+    unifParams.uMatrix,
+    startState, 
+    finalState,
+    nEvents
+  );
+  // Create proper events
+  let eventsWithSelf = zipWith(
+    function(t: MCTransition, eT: Real) {
+      return Event {
+        fromState = t.fromState,
+        toState = t.toState,
+        eventTime = eT,
+        host = host
       };
-    }
-  }
-}
-
-/*
- * Sampling and log pdf for truncated exponential
- */ 
-function sampleTruncatedExponential(rate: Real, maxT: Real): Real {
-  let uMin = exp(-rate * maxT);
-  // Assuming directly from the truncated distribution gave numerical errors
-  assume u_ ~ Uniform(0.0, 1.0);
-  let u = uMin + u_ * (1. - uMin);
-  let expSample = -log(u) / rate;
-  return expSample;
-}
-
-function truncatedExponentialLogPdf(t: Real, rate: Real, maxT: Real) {
-  // The pdf is f(y) / F(maxT) where f and F are pdfs and cdfs for the exponential
-  return log(rate) - t * rate - log(1. - exp(-rate * maxT));
+    },
+    markovChain.transitions,
+    eventTimes
+  );
+  // Remove self transitions
+  let events = fold(
+    function(acc: Event[], e: Event) {
+      if (e.fromState == e.toState) {
+        return acc;
+      } else {
+        // Not sure if there is an `append`?
+        return join([
+          acc,
+          [e]
+        ]);
+      }
+    },
+    [],
+    eventsWithSelf
+  );
+  return BranchSample {
+    history = events, 
+    logDebt = nEventsDebt + eventTimesDebt + markovChain.logDebt,
+    success = true
+  };
 }
