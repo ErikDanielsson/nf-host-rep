@@ -2,13 +2,13 @@ import "lib.mc"
 import "container-types.tppl"
 import "stdlib::seq.mc"
 
-type NEvents {
+type NEvents = NEvents {
   n: Int, logProb: Real
 }
 
 function invTransSampleNEvents(
   u: Real,
-  unifParams: UniformizationParams
+  unifParams: UniformizationParams,
   t: Real,
   a: Int,
   b: Int
@@ -32,7 +32,7 @@ function invTransSampleNEvents(
   // Compute the total probability of the transition (i.e P[X(t) = b | X(0) = a])
   let totalTransProb = mtxGet(a + 1, b + 1, branchKernel);
   // Compute the probability of there no event on branch
-  let accProb = poissonProb * bool2real(a == b) / pab;
+  let accProb = poissonProb * bool2real(a == b) / totalTransProb;
   if u < accProb {
     return NEvents { n = 0, logProb = log(accProb)};
   } else {
@@ -45,7 +45,7 @@ function invTransSampleNEvents(
       t,
       b,
       firstRa,
-      totalTransprob,
+      totalTransProb,
       poissonProb,
       accProb
     );
@@ -62,19 +62,19 @@ function eventHelper(
   totalTransProb: Real,
   prevPoissonVal: Real,
   accProb: Real
-): IntReal {
+): NEvents {
   // Compute the probabilities of being in different states after n steps
   let newRa = mtxMul(prevRa, unifParams.uMatrix);
   // Get the probability of being in state b after n steps
   let rab = mtxGet(1, b + 1, newRa);
   // Accumulate the Poisson probability at n
-  let newPoissonVal = prevVal * unifParams.nu * t / Real(n);
+  let newPoissonVal = prevPoissonVal * unifParams.nu * t / Real(n);
   // Compute the pmf at n 
   let newProb = newPoissonVal * rab / totalTransProb;
   // Accumulate the acceptance probabiltity
   let newAccProb = accProb + newProb;
   if u < newAccProb {
-    return NEvents { i = n, logProb = log(newProb) };
+    return NEvents { n = n, logProb = log(newProb) };
   } else {
     return eventHelper(
       u,
@@ -90,8 +90,8 @@ function eventHelper(
   }
 }
 
-type EventTimes {
-  eventTimes: Real[]
+type EventTimes = EventTimes {
+  eventTimes: Real[],
   logDebt: Real
 }
 
@@ -105,7 +105,7 @@ function getEventTimes(
       assume eT ~ Uniform(startTime, endTime);
       return eT;
     }
-  )
+  );
   // Sort the events
   let eventTimes = qSort(
     function (time1: Real, time2: Real ) {
@@ -123,7 +123,8 @@ function getEventTimes(
   let logDebt = fold(
     function(acc: Real, k: Int) {
       return acc + log(Real(k)) - log(startTime - endTime);
-    }
+    },
+    0.0,
     range(1, nEvents + 1, 1)
   );
   return EventTimes { eventTimes = eventTimes, logDebt = logDebt };

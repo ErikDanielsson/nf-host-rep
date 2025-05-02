@@ -16,3 +16,14 @@ let nestList : all a. [Int] -> Int -> Int -> [[Int]] = lam l. lam r. lam c.
     slice l rs re in
   map row (range 0 r 1)
 
+let seqKroneckerDelta : Int -> Int -> [Float] = lam i. lam n.
+  let k = subi i 1 in
+  let delta = compose bool2real (eqi k) in
+  map delta (range 0 n 1)
+
+-- This creates a row vector with a single one
+let mtxRowKroneckerDelta : Int -> Int -> Mat Float = lam i. lam n. 
+  mtxCreate 1 n (seqKroneckerDelta i n)
+
+-- let mtxColKroneckerDelta : Int -> Int -> Mat Float = lam i. lam n. 
+--   mtxCreate n 1 (seqKroneckerDelta i n)

@@ -6,6 +6,8 @@ import "belief-propagation.tppl"
 import "dist-helpers.tppl"
 import "full-model.tppl"
 import "print-helpers.tppl"
+import "uniformization-helpers.tppl"
+import "forward-backward-algorithm.tppl"
 
 type ReturnType = ReturnType{
   lambda: Real[], mu: Real, beta: Real, tree: HistoryTree
@@ -21,10 +23,10 @@ model function rejectAccept(
   dMean: Real,
   tune: Real
 ): ReturnType {
-  printLn(">>>>>  ALIGNED: LAMBDA");
+//printLn(">>>>>  ALIGNED: LAMBDA");
   assume lambda ~ Dirichlet([1., 1., 1., 1.]) drift Dirichlet([1., 1., 1., 1.]);
-  printLn("<<<<<  ALIGNED: LAMBDA");
-  printSeq(lambda, 1, 4);
+//printLn("<<<<<  ALIGNED: LAMBDA");
+//printSeq(lambda);
 //  printLn(">>>>>  ALIGNED: MU");
   assume mu ~ Exponential(10.) drift Exponential(10.);
   //printLn("<<<<<  ALIGNED: MU");
@@ -154,15 +156,12 @@ function sampleTreeHistory(
     //let samplingProb = mtxElemMul(tree.outMsg, preorderMsg);
     // printLn("Leaf");
     // printMtx(samplingProb);
-    //let initRep = suggestRepAligned(samplingProb, 1, nhosts);
-    // let rep = suggestRepRS(samplingProb, nhosts, initRep);
-    // let nodeLogDebt = getRepertoireDebt(rep, samplingProb, nhosts);
 
     // We are at a leaf, so we don't need to sample the interactions
     let rep = tree.interactions;
     // Sample the incident branch
     let branchSample = sampleBranch(
-      parentRep, rep, parentAge, tree.age, nhosts, modelParams
+      parentRep, rep, parentAge, tree.age, nhosts, modelParams, unifParams
     );
 
     // We are aligned so we can weight the program here (shouldn't matter for MCMC)
@@ -193,7 +192,7 @@ function sampleTreeHistory(
 
     // We are aligned so we can weight the program here (shouldn't matter for MCMC)
     /*
-    printLn(join([
+//  printLn(join([
       "    logdebt: ", real2string(branchSample.logDebt),
       ", nodelogdebt: ", real2string(nodeLogDebt),
       ", logexcess: ", real2string(branchSample.logExcess)
@@ -240,18 +239,6 @@ function sampleBranch(
   let unorderedBranch = sampleUnorderedBranch(
     startRep, finalRep, startAge, finalAge, 1, nhosts, unifParams
   );
-  if !unorderedBranch.success {
-    // If we ran out of rejection depth, set the weight to zero and return an empty history
-    // printLn(join(["    no success :("]));
-    // weight 0.0
-    // printLn("Infinite");
-    return CorrectedBranchSample {
-      history = [],
-      logDebt = -log(0.), 
-      logExcess = 0.0
-    };
-  }
-  // printLn(join(["    success :)"]));
 
   // Sort the events
   // printLn(join(["    history length ", int2string(length(unorderedBranch.history))]));
@@ -261,15 +248,15 @@ function sampleBranch(
   if allTimesValidBranch(startRep, orderedEvents, 1, nEvents, nhosts) {
     // The branch is correct along the full history, 
     // accept and calculate the true weight of the sample
-    printLn("        accepting sample");
-    printLn("    UNORDERED HISTORY");
-    printEvents(unorderedBranch.history);
-    printEvents(orderedEvents);
+    printLn("--------ACCEPTING-SAMPLE");
+//  printLn("    UNORDERED HISTORY");
+//  printEvents(unorderedBranch.history);
+//  printEvents(orderedEvents);
 
-    printLn("Starting repertoire");
-    printSeqInt(startRep, 1, nhosts);
-    printLn("Final repertoire");
-    printSeqInt(finalRep, 1, nhosts);
+//  printLn("Starting repertoire");
+//  printSeqInt(startRep, 1, nhosts);
+//  printLn("Final repertoire");
+//  printSeqInt(finalRep, 1, nhosts);
 
     let logExcess = fullModelWeight(
       1, startRep, finalRep, startAge, finalAge, orderedEvents, nEvents, nhosts, modelParams
@@ -313,52 +300,21 @@ function sampleUnorderedBranch(
   hostIndex: Int,
   nhosts: Int,
   unifParams: UniformizationParams
-  rejectionDepth: Int
 ): BranchSample {
-  let _MAX_REJECTION_DEPTH_HOST = 100;
   // Note that startAge > finalAge since the tree is moving forwards in time
   if hostIndex <= nhosts {
     let hostHistory = sampleHostHistory(
       startRep[hostIndex], finalRep[hostIndex], startAge, finalAge, hostIndex, unifParams
     );
-    // printLn(join(["    after hosthistory"]));
-    if hostHistory.success {
-      //printLn(join(["    success!"]));
-      let otherHostHistories = sampleUnorderedBranch(
-        startRep, finalRep, startAge, finalAge, hostIndex + 1, nhosts, unifParams, 0
-      );
-      // printLn(join(["    rest of branch sampled ", int2string(hostIndex)]));
-      return BranchSample {
-        history = join([hostHistory.history, otherHostHistories.history]),
-        logDebt = hostHistory.logDebt + otherHostHistories.logDebt,
-        success = otherHostHistories.success
-      };
-    } else {
-      if rejectionDepth <= _MAX_REJECTION_DEPTH_HOST {
-        printLn("----rejection_host");
-        return sampleUnorderedBranch(
-          startRep, finalRep, startAge, finalAge, hostIndex, nhosts, unifParams, rejectionDepth + 1
-        );
-      } else {
-        // printLn(join(["        ran out of rejection depth for host ", int2string(hostIndex)]));
-        // weight 0.0;
-        // printLn("Infinite");
-        return BranchSample {
-          history = [],
-          logDebt = -log(0.),
-          success = false
-        };
-      }
-      // Set the weight to zero to resample
-      /*
-      weight 0.0; 
-      return BranchSample {
-        history = [],
-        logDebt = 0.0,
-        success = true
-      };
-      */
-    }
+    let otherHostHistories = sampleUnorderedBranch(
+      startRep, finalRep, startAge, finalAge, hostIndex + 1, nhosts, unifParams
+    );
+    // printLn(join(["    rest of branch sampled ", int2string(hostIndex)]));
+    return BranchSample {
+      history = join([hostHistory.history, otherHostHistories.history]),
+      logDebt = hostHistory.logDebt + otherHostHistories.logDebt,
+      success = otherHostHistories.success
+    };
   } else {
     return BranchSample {
       history = [],
@@ -375,7 +331,7 @@ function sampleHostHistory(
   startAge: Real,
   finalAge: Real,
   host: Int,
-  unifParams: UniformizationParams,
+  unifParams: UniformizationParams
 ): BranchSample {
   // Sample the number of events on the branch
   assume u ~ Uniform(0., 1.);
@@ -405,8 +361,8 @@ function sampleHostHistory(
         toState = t.toState,
         eventTime = eT,
         host = host
-      }
-    }
+      };
+    },
     markovChain.transitions,
     eventTimes
   );
@@ -422,13 +378,13 @@ function sampleHostHistory(
           [e]
         ]);
       }
-    }
+    },
     [],
     eventsWithSelf
   );
   return BranchSample {
     history = events, 
-    logDebt = nEventsDebt + eventTimesDebt + markovChain.logDebt
+    logDebt = nEventsDebt + eventTimesDebt + markovChain.logDebt,
     success = true
   };
 }

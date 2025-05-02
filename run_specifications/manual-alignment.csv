@@ -1,2 +1,3 @@
 rb-emul	reject-accept	-m mcmc-lightweight --align --cps full --kernel --incremental-printing 
 independence	reject-accept	-m mcmc-lightweight --align --cps full --kernel --incremental-printing 
+independence	uniformization	-m mcmc-lightweight --align --cps full --kernel --incremental-printing 
