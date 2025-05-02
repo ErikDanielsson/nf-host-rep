@@ -2,7 +2,6 @@ import "stdlib::seq.mc"
 import "stdlib::math.mc"
 import "helpers.tppl"
 import "container-types.tppl"
-import "print-helpers.tppl"
 /*
  * This file contains functions for calculating the point wise density (excess)
  * for the full model.
@@ -18,20 +17,8 @@ function fullModelWeight(
   nhosts: Int,
   modelParams: ModelParams
 ): Real {
-  // printLn(join(["In full model at ", int2string(nextIndex)]));
-  // printSeqInt(currRep, 1, nhosts);
-  // printEvents(eventSeq);
-  // printSeqInt(finalRep, 1, nhosts);
   if nextIndex > nEvents {
-    // Check that the final repertorie matches the repertoire we end up with
-    /*
-    if any(zipWith(function(h1: Int, h2: Int) { return h1 != h2; }, currRep, finalRep)) {
-      // Crash the program
-// printLn("Something went wrong when updating repertoire, final repertorie not match");
-      return eventSeq[nEvents + 1].age;
-    }
-    */
-    // Handle the fact that there was no event in the last time segment
+   // Handle the fact that there was no event in the last time segment
     let timePassed = currAge - finalAge;
     let totalLeavingRate = getTotalRate(currRep, modelParams, nhosts);
     // The probability that no event occurs in the time interval is exp(-t * rate)
@@ -47,14 +34,6 @@ function fullModelWeight(
     let thisWeight = log(thisRate / totalLeavingRate) - timePassed * totalLeavingRate;
     // Compute the next repertoire 
     let newRep = updateRepertoire(currRep, nextEvent, nhosts);
-// printSeqInt(currRep, 1, 3);
-// printSeqInt(newRep, 1, 3);
-//  printLn("Current");
-//  printSeqInt(currRep, 1, 3);
-//  printLn("Event");
-//  printLn(join([int2string(nextEvent.host), ": ", int2string(nextEvent.fromState), "->", int2string(nextEvent.toState)]));
-//  printLn("New");
-//  printSeqInt(newRep, 1, 3);
     return thisWeight + fullModelWeight(
       nextIndex + 1,
       newRep,
@@ -72,8 +51,6 @@ function fullModelWeight(
 function getTotalRate(
   currRep: Int[], modelParams: ModelParams, nhosts: Int
 ) {
-// printLn("    total rate");
-  // printLn("Totalrates, before gain");
   // Compute the total rate of leaving the current repertoire
   let gainRates = fold(
     function(acc: Real, i: Int) {
@@ -88,7 +65,6 @@ function getTotalRate(
     0.0,
     range(1, nhosts + 1, 1)
   );
-  // printLn("Totalrates, before loss");
   let lossRates = fold(
     function(acc: Real, i: Int) {
       let fromState = currRep[i];
@@ -101,19 +77,14 @@ function getTotalRate(
     0.0,
     range(1, nhosts + 1, 1)
   );
-  // printLn("Totalrates, after loss");
   return gainRates + lossRates;
 }
 
 function getRate(currRep: Int[], nextEvent: Event, modelParams: ModelParams) {
   let hostIndex = nextEvent.host;
-//  printSeqInt(currRep, 1, 3);
-//  printLn(join([int2string(nextEvent.host), ": ", int2string(nextEvent.fromState), "->", int2string(nextEvent.toState)]));
   if nextEvent.fromState > nextEvent.toState {
-    //printLn("Loss event");
     return getLossRate(currRep, hostIndex, modelParams);
   } else {
-    //printLn("Gain event");
     return getGainRate(currRep, hostIndex, modelParams);
   }
 }
@@ -127,10 +98,7 @@ function getLossRate(
     return 0.0;
   } else {
     let toState = fromState - 1;
-    // printLn(join(["Before Get base rate: ", int2string(fromState + 1), " ", int2string(toState + 1)]));
-// printLn(join(["    loss rate get mtx ", int2string(fromState + 1), " ", int2string(toState + 1)]));
     let baseRate = mtxGet(fromState + 1, toState + 1, modelParams.embeddedQMatrix.mat);
-    //printLn("After Get base rate");
     return baseRate;
   }
 }
@@ -142,9 +110,7 @@ function getGainRate (
 ): Real {
   let fromState = repertoire[hostIndex];
   let toState = fromState + 1;
-//  printLn(join(["    gain rate get mtx ", int2string(fromState + 1), " ", int2string(toState + 1)]));
   let baseRate = mtxGet(fromState + 1, toState + 1, modelParams.embeddedQMatrix.mat);
-//  printLn("After Get base rate");
   // We need to add the phylogenetic influence to the rate
   // since we have a gain event
   if fromState == 0 {
@@ -173,7 +139,6 @@ function getGainRate (
 function allTimesValidBranch(
   currRep: Int[], eventSeq: Event[], eventIndex: Int, nEvents: Int, nhosts: Int
 ): Bool {
-  // printLn(join(["        all times valid branch ", int2string(eventIndex)]));
   if eventIndex > nEvents {
     // We reached the end of the proposed history, the branch is valid!
     return true;

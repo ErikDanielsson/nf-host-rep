@@ -5,7 +5,6 @@ import "helpers.tppl"
 import "belief-propagation.tppl"
 import "dist-helpers.tppl"
 import "full-model.tppl"
-import "print-helpers.tppl"
 import "uniformization-helpers.tppl"
 import "forward-backward-algorithm.tppl"
 
@@ -26,7 +25,6 @@ model function rejectAccept(
 //printLn(">>>>>  ALIGNED: LAMBDA");
   assume lambda ~ Dirichlet([1., 1., 1., 1.]) drift Dirichlet([1., 1., 1., 1.]);
 //printLn("<<<<<  ALIGNED: LAMBDA");
-//printSeq(lambda);
 //  printLn(">>>>>  ALIGNED: MU");
   assume mu ~ Exponential(10.) drift Exponential(10.);
   //printLn("<<<<<  ALIGNED: MU");
@@ -51,8 +49,6 @@ model function rejectAccept(
   let rootSamplingProb = mtxElemMul(postorderTree.outMsg, rootPrior);
   let initRootRep = suggestRepAligned(rootSamplingProb, 1, nhosts);
   let rootRep = suggestRepRS(rootSamplingProb, nhosts, initRootRep, 0);
-//  printLn("    root rep");
-//  printSeqInt(rootRep, 1, nhosts);
 
   // Calculate the debt and excess
   let rootLogDebt = getRepertoireDebt(rootRep, rootSamplingProb, nhosts);
@@ -131,8 +127,6 @@ function suggestRepRS(msg: Matrix[Real], max: Int, initialRep: Int[], depth: Int
 function suggestRepUnaligned(msg: Matrix[Real], i: Int, max: Int) {
   if i <= max {
     let param = mtx3ToSeq(msg, i);
-    // printLn("Unaligned");
-    // printSeq(param, 1, 3);
     // printLn(join([">>>>>UNALIGNED: NODE ", int2string(i)]));
     assume x ~ Categorical(param); 
     // printLn(join(["<<<<<UNALIGNED: NODE ", int2string(i)]));
@@ -152,11 +146,6 @@ function sampleTreeHistory(
   unifParams: UniformizationParams
 ): HistoryTree {
   if tree is MsgLeaf {
-    // printLn(join(["       sample start leaf ", int2string(tree.label)]));
-    //let samplingProb = mtxElemMul(tree.outMsg, preorderMsg);
-    // printLn("Leaf");
-    // printMtx(samplingProb);
-
     // We are at a leaf, so we don't need to sample the interactions
     let rep = tree.interactions;
     // Sample the incident branch
@@ -176,11 +165,9 @@ function sampleTreeHistory(
       logWeight branchSample.logExcess - branchSample.logDebt;
     } else {
       // We failed to sample a correct branch, set program weight to zero
-      printLn("    failed to sample branch, setting weight zero");
       weight 0.0;
     }
 
-    // printLn(join(["       sample start leaf ", int2string(tree.label)]));
     return HistoryLeaf {
       age = tree.age,
       label = tree.label,
@@ -188,15 +175,10 @@ function sampleTreeHistory(
       history = branchSample.history
     };
   } else {
-    // printLn(join(["       sample start node ", int2string(tree.label)]));
     let samplingProb = mtxElemMul(tree.outMsg, preorderMsg);
     let initRep = suggestRepAligned(samplingProb, 1, nhosts);
     let rep = suggestRepRS(samplingProb, nhosts, initRep, 0);
     let nodeLogDebt = getRepertoireDebt(rep, samplingProb, nhosts);
-//  printLn(join(["    node rep ", int2string(tree.label)]));
-//  printSeqInt(rep, 1, nhosts);
-//  printLn(join(["    parent rep ", int2string(tree.label)]));
-//  printSeqInt(parentRep, 1, nhosts);
 
     // Sample the incident branch
     let branchSample = sampleBranch(
@@ -210,29 +192,18 @@ function sampleTreeHistory(
       0
     );
 
+    // We are aligned so we can weight the program here (shouldn't matter for MCMC)
     if branchSample.success {
       logWeight branchSample.logExcess - branchSample.logDebt - nodeLogDebt;
     } else {
-      // printLn("    failed to sample branch, setting weight zero");
       weight 0.0;
     }
-
-    // We are aligned so we can weight the program here (shouldn't matter for MCMC)
-    /*
-//  printLn(join([
-      "    logdebt: ", real2string(branchSample.logDebt),
-      ", nodelogdebt: ", real2string(nodeLogDebt),
-      ", logexcess: ", real2string(branchSample.logExcess)
-    ]));
-    */
-    //printLn(join(["    node log weight ", real2string(branchSample.logExcess - branchSample.logDebt - nodeLogDebt)]));
 
     // Since we sampled a repertoire at the node we should propagate this information to the child nodes
     let newMsg = mtxCreate(nhosts, 3, observationMessage(rep, 1, nhosts));
     let leftMsg = mtxMul(newMsg, tree.leftKernel);
     let rightMsg = mtxMul(newMsg, tree.rightKernel);
 
-    // printLn(join(["       sample done  node ", int2string(tree.label)]));
     // Sample the two subtrees
     let left = sampleTreeHistory(
       tree.left, nhosts, leftMsg, rep, tree.age, modelParams, unifParams
@@ -270,23 +241,11 @@ function sampleBranch(
     );
 
     // Sort the events
-    // printLn(join(["    history length ", int2string(length(unorderedBranch.history))]));
     let orderedEvents = qSort(compAge, unorderedBranch.history);
-    // printLn(join(["    sorted"]));
     let nEvents = length(orderedEvents);
     if allTimesValidBranch(startRep, orderedEvents, 1, nEvents, nhosts) {
       // The branch is correct along the full history, 
       // accept and calculate the true weight of the sample
-      // printLn(join(["        ACCEPTING-SAMPLE (rej. ", int2string(rejectionDepth), ")"]));
-  //  printLn("    UNORDERED HISTORY");
-  //  printEvents(unorderedBranch.history);
-  //  printEvents(orderedEvents);
-
-  //  printLn("Starting repertoire");
-  //  printSeqInt(startRep, 1, nhosts);
-  //  printLn("Final repertoire");
-  //  printSeqInt(finalRep, 1, nhosts);
-
       let logExcess = fullModelWeight(
         1, startRep, finalRep, startAge, finalAge, orderedEvents, nEvents, nhosts, modelParams
       );
@@ -299,7 +258,6 @@ function sampleBranch(
       };
     } else {
       // The repertoire was invalid somewhere along the branch, reject and sample again
-      // printLn("        REJECTING-SAMPLE");
       return sampleBranch(
         startRep,
         finalRep,
@@ -324,11 +282,9 @@ function sampleBranch(
 
 function compAge(left: Event, right: Event): Int {
   if (isNaN(right.eventTime)) {
-    // printLn("nan in sort");
     return -1;
   } 
   if (isNaN(left.eventTime)) {
-    // printLn("nan in sort");
     return 1;
   } 
   if (right.eventTime >= left.eventTime) {
@@ -355,7 +311,6 @@ function sampleUnorderedBranch(
     let otherHostHistories = sampleUnorderedBranch(
       startRep, finalRep, startAge, finalAge, hostIndex + 1, nhosts, unifParams
     );
-    // printLn(join(["    rest of branch sampled ", int2string(hostIndex)]));
     return BranchSample {
       history = join([hostHistory.history, otherHostHistories.history]),
       logDebt = hostHistory.logDebt + otherHostHistories.logDebt,

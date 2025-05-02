@@ -25,7 +25,6 @@ model function rejectAccept(
 //  printLn(">>>>>  ALIGNED: LAMBDA");
   assume lambda ~ Dirichlet([1., 1., 1., 1.]) drift rbLambdaMove(lambda);
 //  printLn("<<<<<  ALIGNED: LAMBDA");
-//  printSeq(lambda, 1, 4);
 //  printLn(">>>>>  ALIGNED: MU");
   assume mu ~ Exponential(10.) drift rbMuMove(mu);
   //printLn("<<<<<  ALIGNED: MU");
@@ -50,8 +49,6 @@ model function rejectAccept(
   let rootSamplingProb = mtxElemMul(postorderTree.outMsg, rootPrior);
   let initRootRep = suggestRepAligned(rootSamplingProb, 1, nhosts);
   let rootRep = suggestRepRS(rootSamplingProb, nhosts, initRootRep, 0);
-//  printLn("    root rep");
-//  printSeqInt(rootRep, 1, nhosts);
 
   // Calculate the debt and excess
   let rootLogDebt = getRepertoireDebt(rootRep, rootSamplingProb, nhosts);
@@ -128,8 +125,6 @@ function suggestRepRS(msg: Matrix[Real], max: Int, initialRep: Int[], depth: Int
 function suggestRepUnaligned(msg: Matrix[Real], i: Int, max: Int) {
   if i <= max {
     let param = mtx3ToSeq(msg, i);
-    // printLn("Unaligned");
-    // printSeq(param, 1, 3);
     // printLn(join([">>>>>UNALIGNED: NODE ", int2string(i)]));
     assume x ~ Categorical(param); 
     // printLn(join(["<<<<<UNALIGNED: NODE ", int2string(i)]));
@@ -148,14 +143,6 @@ function sampleTreeHistory(
   modelParams: ModelParams
 ): HistoryTree {
   if tree is MsgLeaf {
-    // printLn(join(["       sample start leaf ", int2string(tree.label)]));
-    //let samplingProb = mtxElemMul(tree.outMsg, preorderMsg);
-    // printLn("Leaf");
-    // printMtx(samplingProb);
-    //let initRep = suggestRepAligned(samplingProb, 1, nhosts);
-    // let rep = suggestRepRS(samplingProb, nhosts, initRep);
-    // let nodeLogDebt = getRepertoireDebt(rep, samplingProb, nhosts);
-
     // We are at a leaf, so we don't need to sample the interactions
     let rep = tree.interactions;
     // Sample the incident branch
@@ -172,12 +159,10 @@ function sampleTreeHistory(
     if branchSample.success {
       logWeight branchSample.logExcess - branchSample.logDebt;
     } else {
-      printLn("    failed to sample branch, setting weight zero");
       // We failed to sample a correct branch, set program weight to zero
       weight 0.0;
     }
 
-    // printLn(join(["       sample start leaf ", int2string(tree.label)]));
     return HistoryLeaf {
       age = tree.age,
       label = tree.label,
@@ -185,15 +170,10 @@ function sampleTreeHistory(
       history = branchSample.history
     };
   } else {
-    // printLn(join(["       sample start node ", int2string(tree.label)]));
     let samplingProb = mtxElemMul(tree.outMsg, preorderMsg);
     let initRep = suggestRepAligned(samplingProb, 1, nhosts);
     let rep = suggestRepRS(samplingProb, nhosts, initRep, 0);
     let nodeLogDebt = getRepertoireDebt(rep, samplingProb, nhosts);
-//  printLn(join(["    node rep ", int2string(tree.label)]));
-//  printSeqInt(rep, 1, nhosts);
-//  printLn(join(["    parent rep ", int2string(tree.label)]));
-//  printSeqInt(parentRep, 1, nhosts);
 
     // Sample the incident branch
     let branchSample = sampleBranch(
@@ -205,20 +185,11 @@ function sampleTreeHistory(
       modelParams,
       0
     );
-    /*
-    printLn(join([
-      "    logdebt: ", real2string(branchSample.logDebt),
-      ", nodelogdebt: ", real2string(nodeLogDebt),
-      ", logexcess: ", real2string(branchSample.logExcess)
-    ]));
-    */
-    //printLn(join(["    node log weight ", real2string(branchSample.logExcess - branchSample.logDebt - nodeLogDebt)]));
 
     // We are aligned so we can weight the program here (shouldn't matter for MCMC)
     if branchSample.success {
       logWeight branchSample.logExcess - branchSample.logDebt - nodeLogDebt;
     } else {
-      printLn("    failed to sample branch, setting weight zero");
       // We failed to sample a correct branch, set program weight to zero
       weight 0.0;
     }
@@ -228,7 +199,6 @@ function sampleTreeHistory(
     let leftMsg = mtxMul(newMsg, tree.leftKernel);
     let rightMsg = mtxMul(newMsg, tree.rightKernel);
 
-    // printLn(join(["       sample done  node ", int2string(tree.label)]));
     // Sample the two subtrees
     let left = sampleTreeHistory(
       tree.left, nhosts, leftMsg, rep, tree.age, modelParams
@@ -264,28 +234,12 @@ function sampleBranch(
       startRep, finalRep, startAge, finalAge, 1, nhosts, modelParams.embeddedQMatrix, 1
     );
     if unorderedBranch.success {
-      // All host histories were sampled correctly
-      // printLn(join(["    success :)"]));
-
-      // Sort the events
-      // printLn(join(["    history length ", int2string(length(unorderedBranch.history))]));
+      // All host histories were sampled correctly, sort the events
       let orderedEvents = qSort(compAge, unorderedBranch.history);
-      // printLn(join(["    sorted"]));
       let nEvents = length(orderedEvents);
       if allTimesValidBranch(startRep, orderedEvents, 1, nEvents, nhosts) {
         // The branch is correct along the full history, 
         // accept and calculate the true weight of the sample
-        /*
-        printLn("        accepting sample");
-        printLn("    UNORDERED HISTORY");
-        printEvents(unorderedBranch.history);
-        printEvents(orderedEvents);
-
-        printLn("Starting repertoire");
-        printSeqInt(startRep, 1, nhosts);
-        printLn("Final repertoire");
-        printSeqInt(finalRep, 1, nhosts);
-      */
         let logExcess = fullModelWeight(
           1, startRep, finalRep, startAge, finalAge, orderedEvents, nEvents, nhosts, modelParams
         );
@@ -300,7 +254,6 @@ function sampleBranch(
     }
     // Either one of the hosts failed to be sampled correctly
     // or the history was invalid somewhere along the branch
-    // printLn("--------REJECTING-SAMPLE");
     return sampleBranch(
       startRep,
       finalRep,
@@ -323,11 +276,9 @@ function sampleBranch(
 
 function compAge(left: Event, right: Event): Int {
   if (isNaN(right.eventTime)) {
-    // printLn("nan in sort");
     return -1;
   } 
   if (isNaN(left.eventTime)) {
-    // printLn("nan in sort");
     return 1;
   } 
   if (right.eventTime >= left.eventTime) {
@@ -353,13 +304,10 @@ function sampleUnorderedBranch(
     let hostHistory = sampleHostHistory(
       startRep[hostIndex], finalRep[hostIndex], startAge, finalAge, hostIndex, embeddedQMatrix, 1
     );
-    // printLn(join(["    after hosthistory"]));
     if hostHistory.success {
-      //printLn(join(["    success!"]));
       let otherHostHistories = sampleUnorderedBranch(
         startRep, finalRep, startAge, finalAge, hostIndex + 1, nhosts, embeddedQMatrix, 0
       );
-      // printLn(join(["    rest of branch sampled ", int2string(hostIndex)]));
       return BranchSample {
         history = join([hostHistory.history, otherHostHistories.history]),
         logDebt = hostHistory.logDebt + otherHostHistories.logDebt,
@@ -367,27 +315,16 @@ function sampleUnorderedBranch(
       };
     } else {
       if rejectionDepth <= _MAX_REJECTION_DEPTH_HOST {
-        // printLn("----rejection_host");
         return sampleUnorderedBranch(
           startRep, finalRep, startAge, finalAge, hostIndex, nhosts, embeddedQMatrix, rejectionDepth + 1
         );
       } else {
-        // printLn(join(["        ran out of rejection depth for host ", int2string(hostIndex)]));
-        // printLn("Infinite");
         return BranchSample {
           history = [],
           logDebt = -log(0.),
           success = false
         };
       }
-      // Set the weight to zero to resample
-      /*
-      return BranchSample {
-        history = [],
-        logDebt = 0.0,
-        success = true
-      };
-      */
     }
   } else {
     return BranchSample {
@@ -408,19 +345,10 @@ function sampleHostHistory(
   embeddedQMatrix: EmbeddedMarkovChainMatrix,
   stepIndex: Int
 ): BranchSample {
-  // printLn(join(["Sample host history depth ", int2string(depth)]));
-  // printLn(join(["    sample host history ", int2string(host)]));
   let totalRate = embeddedQMatrix.totalRates[startState + 1];
   if startState != finalState && stepIndex == 1 {
     // If there is a mutation on the interval, sample the first event from a truncated exponential
-    // printLn("    truncated");
-    // printLn(join(["times: start ", real2string(startAge), " final ", real2string(finalAge)]));
-    
-    // printLn(join(["Start age ", real2string(startAge), " final age ", real2string(finalAge)]));
-    // If the start state does not equal the final state, then there must be an event on the interval
-    // so we sample from a truncated exponential. This DOES NOT result in a correct instatiation of the 
-    // CTMC but since we are importance sampling, this is fine.
-    // Correct sampling would include computation of a matrix exponential, see (Nielsen, 2002) or (Hobolth & Stone, 2009)
+
     // printLn(">>>>>UNALIGNED: TRUNCATED EXPONENTIAL");
     let t = sampleTruncatedExponential(totalRate, startAge - finalAge);
     // printLn("<<<<<UNALIGNED: TRUNCATED EXPONENTIAL");
@@ -430,12 +358,10 @@ function sampleHostHistory(
     // Sample the next event
     // printLn(">>>>>UNALIGNED: CATEGORICAL");
     let nextState = sampleNextEvent(startState, embeddedQMatrix);
-    //assume nextState ~ Categorical(param);
     // printLn(join(["<<<<<UNALIGNED Trunc: CATEGORICAL ", int2string(host)]));
     let param = embeddedQMatrix.transitionProbs[startState + 1];
 
     let stateLogDebt = categoricalLogPdf(nextState, param); 
-    // printLn(join(["Recurse 1 ", real2string(eventTime)]));
     let restOfHistory = sampleHostHistory(nextState, finalState, eventTime, finalAge, host, embeddedQMatrix, stepIndex + 1);
     return BranchSample {
       history = cons(
@@ -447,7 +373,6 @@ function sampleHostHistory(
     };
 
   } else {
-    // printLn("    full");
     // If the final state does not equal the start state, then we don't want to
     // force there to be events in the remaining interval
     // printLn(">>>>>UNALIGNED: EXPONENTIAL");
@@ -455,7 +380,6 @@ function sampleHostHistory(
     // printLn("<<<<<UNALIGNED: EXPONENTIAL");
     let timeLogDebt = exponentialLogPdf(t, totalRate);
     if startAge - t < finalAge {
-      // printLn("    overshot");
       // We overshoot so we are finished, and just save the debt
       if startState == finalState {
         return BranchSample {
@@ -484,8 +408,6 @@ function sampleHostHistory(
       // Record the event time
       let eventTime = startAge - t;
 
-      // printLn("    next sample");
-      // printLn(join(["Recurse 2 ", real2string(eventTime)]));
       let restOfHistory = sampleHostHistory(nextState, finalState, eventTime, finalAge, host, embeddedQMatrix, stepIndex + 1);
       return BranchSample {
         history = cons(
@@ -503,17 +425,11 @@ function sampleHostHistory(
  * Sampling and log pdf for truncated exponential
  */ 
 function sampleTruncatedExponential(rate: Real, maxT: Real): Real {
-   // printLn(join(["Truncated exponential (0.0, ", real2string(maxT), ")"]));
   let uMin = exp(-rate * maxT);
-   // printLn(join(["Rate ", real2string(rate)]));
-   // printLn(join(["Uniform min ", real2string(uMin)]));
   // Assuming directly from the truncated distribution gave numerical errors
   assume u_ ~ Uniform(0.0, 1.0);
   let u = uMin + u_ * (1. - uMin);
-   // printLn(join(["Uniform sample ", real2string(u_)]));
-   // printLn(join(["Uniform min sample ", real2string(u)]));
   let expSample = -log(u) / rate;
-  // printLn(join(["Exponential sample ", real2string(expSample)]));
   return expSample;
 }
 

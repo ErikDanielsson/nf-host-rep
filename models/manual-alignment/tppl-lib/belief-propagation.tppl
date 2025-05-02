@@ -7,9 +7,6 @@ function postorderTraverse(
 ): MsgTree {
   if tree is Leaf {
     let outmsg = mtxCreate(nhosts, 3, observationMessage(interactions[tree.label], 1, nhosts));
-    // printLn("Postorder leaf");
-    // printSeqInt(interactions[tree.label]);
-    // printMtx(outmsg);
     let leafInts = interactions[tree.label];
     return MsgLeaf{
       age = 0.0,

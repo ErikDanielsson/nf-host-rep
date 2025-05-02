@@ -1,7 +1,6 @@
 import "stdlib::seq.mc"
 import "lib.mc"
 import "dist-helpers.tppl"
-import "print-helpers.tppl"
 
 type MCTransition = MCTransition {
   fromState: Int,
@@ -20,8 +19,6 @@ function forwardsBackardsAlgorithm(
   endState: Int,
   nSteps: Int
 ): MCAndDebt {
-//printLn("FB with kernel");
-//printMtx(kernel);
   // The backward kernel is the transpose
   let backwardsKernel = mtxTrans(kernel);
   // Compute the backwards messages
@@ -37,7 +34,6 @@ function forwardsBackardsAlgorithm(
     [endStateIndicator],
     range(1, nSteps, 1)
   );
-//printRowMtxSeq(backwardMsgs);
 
   // Sample the chain forwards in time
   let samples = sampleStateForwards(1, kernel, startState, backwardMsgs, nSteps);
@@ -53,18 +49,10 @@ function sampleStateForwards(
   nSteps: Int
 ): MCAndDebt {
   if i < nSteps {
-//  printLn(join(["Sample forwards ", int2string(i), " of ", int2string(nSteps)]));
     let forwardMsg = mtxGetRow(prevState + 1, kernel); // The forward transition probabilities is just the correct row vector of the kernel
-//  printLn("ForwardMsg");
-//  printMtx(forwardMsg);
     let backwardMsg = backwardMsgs[i]; // Get the backward transition probabilities 
-//  printLn("backwardMsg");
-//  printMtx(backwardMsg);
     let totMsg = mtxNormalize(mtxElemMul(forwardMsg, backwardMsg));
-//  printLn("totmsg");
-//  printMtx(totMsg);
     let param = colMatToSeq(totMsg);
-//  printSeq(param);
     assume sampleState ~ Categorical(param); // Sample the next state
     let currDebt = categoricalLogPdf(sampleState, param);
     let restOfChain = sampleStateForwards(i + 1, kernel, sampleState, backwardMsgs, nSteps);
