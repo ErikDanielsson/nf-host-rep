@@ -5,8 +5,8 @@ import "helpers.tppl"
 import "belief-propagation.tppl"
 import "dist-helpers.tppl"
 import "full-model.tppl"
-// import "print-helpers.tppl"
 import "rb-drift-kernels.tppl"
+// import "print-helpers.tppl"
 
 type ReturnType = ReturnType{
   lambda: Real[], mu: Real, beta: Real, tree: HistoryTree
@@ -22,10 +22,10 @@ model function rejectAccept(
   dMean: Real,
   tune: Real
 ): ReturnType {
-  // printLn(">>>>>  ALIGNED: LAMBDA");
+//  printLn(">>>>>  ALIGNED: LAMBDA");
   assume lambda ~ Dirichlet([1., 1., 1., 1.]) drift rbLambdaMove(lambda);
-  // printLn("<<<<<  ALIGNED: LAMBDA");
-  //printSeq(lambda, 1, 4);
+//  printLn("<<<<<  ALIGNED: LAMBDA");
+//  printSeq(lambda, 1, 4);
 //  printLn(">>>>>  ALIGNED: MU");
   assume mu ~ Exponential(10.) drift rbMuMove(mu);
   //printLn("<<<<<  ALIGNED: MU");
@@ -160,11 +160,22 @@ function sampleTreeHistory(
     let rep = tree.interactions;
     // Sample the incident branch
     let branchSample = sampleBranch(
-      parentRep, rep, parentAge, tree.age, nhosts, modelParams
+      parentRep,
+      rep,
+      parentAge,
+      tree.age,
+      nhosts,
+      modelParams,
+      0
     );
-
     // We are aligned so we can weight the program here (shouldn't matter for MCMC)
-    logWeight branchSample.logExcess - branchSample.logDebt;
+    if branchSample.success {
+      logWeight branchSample.logExcess - branchSample.logDebt;
+    } else {
+      printLn("    failed to sample branch, setting weight zero");
+      // We failed to sample a correct branch, set program weight to zero
+      weight 0.0;
+    }
 
     // printLn(join(["       sample start leaf ", int2string(tree.label)]));
     return HistoryLeaf {
@@ -186,10 +197,14 @@ function sampleTreeHistory(
 
     // Sample the incident branch
     let branchSample = sampleBranch(
-      parentRep, rep, parentAge, tree.age, nhosts, modelParams
+      parentRep,
+      rep,
+      parentAge,
+      tree.age,
+      nhosts,
+      modelParams,
+      0
     );
-
-    // We are aligned so we can weight the program here (shouldn't matter for MCMC)
     /*
     printLn(join([
       "    logdebt: ", real2string(branchSample.logDebt),
@@ -198,7 +213,15 @@ function sampleTreeHistory(
     ]));
     */
     //printLn(join(["    node log weight ", real2string(branchSample.logExcess - branchSample.logDebt - nodeLogDebt)]));
-    logWeight branchSample.logExcess - branchSample.logDebt - nodeLogDebt;
+
+    // We are aligned so we can weight the program here (shouldn't matter for MCMC)
+    if branchSample.success {
+      logWeight branchSample.logExcess - branchSample.logDebt - nodeLogDebt;
+    } else {
+      printLn("    failed to sample branch, setting weight zero");
+      // We failed to sample a correct branch, set program weight to zero
+      weight 0.0;
+    }
 
     // Since we sampled a repertoire at the node we should propagate this information to the child nodes
     let newMsg = mtxCreate(nhosts, 3, observationMessage(rep, 1, nhosts));
@@ -231,60 +254,70 @@ function sampleBranch(
   startAge: Real,
   finalAge: Real,
   nhosts: Int,
-  modelParams: ModelParams
+  modelParams: ModelParams,
+  rejectionDepth: Int
 ): CorrectedBranchSample {
-  // Sample the events per host
-  let unorderedBranch = sampleUnorderedBranch(
-    startRep, finalRep, startAge, finalAge, 1, nhosts, modelParams.embeddedQMatrix, 1
-  );
-  if !unorderedBranch.success {
-    // If we ran out of rejection depth, set the weight to zero and return an empty history
-    // printLn(join(["    no success :("]));
-    // weight 0.0
-    // printLn("Infinite");
+  let _MAX_REJECTION_DEPTH_BRANCH = 100;
+  if rejectionDepth <= _MAX_REJECTION_DEPTH_BRANCH {
+    // Sample the events per host
+    let unorderedBranch = sampleUnorderedBranch(
+      startRep, finalRep, startAge, finalAge, 1, nhosts, modelParams.embeddedQMatrix, 1
+    );
+    if unorderedBranch.success {
+      // All host histories were sampled correctly
+      // printLn(join(["    success :)"]));
+
+      // Sort the events
+      // printLn(join(["    history length ", int2string(length(unorderedBranch.history))]));
+      let orderedEvents = qSort(compAge, unorderedBranch.history);
+      // printLn(join(["    sorted"]));
+      let nEvents = length(orderedEvents);
+      if allTimesValidBranch(startRep, orderedEvents, 1, nEvents, nhosts) {
+        // The branch is correct along the full history, 
+        // accept and calculate the true weight of the sample
+        /*
+        printLn("        accepting sample");
+        printLn("    UNORDERED HISTORY");
+        printEvents(unorderedBranch.history);
+        printEvents(orderedEvents);
+
+        printLn("Starting repertoire");
+        printSeqInt(startRep, 1, nhosts);
+        printLn("Final repertoire");
+        printSeqInt(finalRep, 1, nhosts);
+      */
+        let logExcess = fullModelWeight(
+          1, startRep, finalRep, startAge, finalAge, orderedEvents, nEvents, nhosts, modelParams
+        );
+        // Return the branch sample with both the debt and the excess
+        return CorrectedBranchSample {
+          history = orderedEvents,
+          logDebt = unorderedBranch.logDebt,
+          logExcess = logExcess,
+          success = true
+        };
+      }
+    }
+    // Either one of the hosts failed to be sampled correctly
+    // or the history was invalid somewhere along the branch
+    // printLn("--------REJECTING-SAMPLE");
+    return sampleBranch(
+      startRep,
+      finalRep,
+      startAge,
+      finalAge,
+      nhosts,
+      modelParams,
+      rejectionDepth + 1
+    );
+  } else {
+    // We ran out of rejection depth for the branch
     return CorrectedBranchSample {
       history = [],
-      logDebt = -log(0.), 
-      logExcess = 0.0
-    };
-  }
-  // printLn(join(["    success :)"]));
-
-  // Sort the events
-  // printLn(join(["    history length ", int2string(length(unorderedBranch.history))]));
-  let orderedEvents = qSort(compAge, unorderedBranch.history);
-  // printLn(join(["    sorted"]));
-  let nEvents = length(orderedEvents);
-  if allTimesValidBranch(startRep, orderedEvents, 1, nEvents, nhosts) {
-    // The branch is correct along the full history, 
-    // accept and calculate the true weight of the sample
-    /*
-    printLn("        accepting sample");
-    printLn("    UNORDERED HISTORY");
-    printEvents(unorderedBranch.history);
-    printEvents(orderedEvents);
-*/
-
-    // printLn("Starting repertoire");
-    // printSeqInt(startRep, 1, nhosts);
-    // printLn("Final repertoire");
-    // printSeqInt(finalRep, 1, nhosts);
-
-    let logExcess = fullModelWeight(
-      1, startRep, finalRep, startAge, finalAge, orderedEvents, nEvents, nhosts, modelParams
-    );
-    // Return the branch sample with both the debt and the excess
-    return CorrectedBranchSample {
-      history = orderedEvents,
-      logDebt = unorderedBranch.logDebt,
-      logExcess = logExcess
-    };
-  } else {
-    // The repertoire was invalid somewhere along the branch, reject and sample again
-//    printLn("--------REJECTING-SAMPLE");
-    return sampleBranch(
-      startRep, finalRep, startAge, finalAge, nhosts, modelParams
-    );
+      logDebt = -log(0.0),
+      logExcess = log(0.0),
+      success = false
+    };   
   }
 }
 
@@ -340,7 +373,6 @@ function sampleUnorderedBranch(
         );
       } else {
         // printLn(join(["        ran out of rejection depth for host ", int2string(hostIndex)]));
-        // weight 0.0;
         // printLn("Infinite");
         return BranchSample {
           history = [],
@@ -350,7 +382,6 @@ function sampleUnorderedBranch(
       }
       // Set the weight to zero to resample
       /*
-      weight 0.0; 
       return BranchSample {
         history = [],
         logDebt = 0.0,

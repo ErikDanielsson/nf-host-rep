@@ -34,15 +34,18 @@ type HistoryTree =
 // Container type for a single event in a host
 type Event = Event {eventTime: Real, fromState: Int, toState: Int, host: Int}
 
-// Contaienr type for the history along a branch,
+// Container type for the history along a branch,
 // along with the debt from the independence model
-type BranchSample = BranchSample { history: Event[], logDebt: Real, success: Bool }
+type BranchSample = BranchSample {
+  history: Event[], logDebt: Real, success: Bool
+}
 
 // Like the above but with the excess from the full model too
 type CorrectedBranchSample = CorrectedBranchSample {
   history: Event[],
   logDebt: Real,
-  logExcess: Real
+  logExcess: Real,
+  success: Bool
 }
 
 // Container type for a CTMC in jump chain form
