@@ -9,6 +9,7 @@ import "uniformization-helpers.tppl"
 import "forward-backward-algorithm.tppl"
 import "rb-drift-kernels.tppl"
 import "custom-debug-info.tppl"
+import "independence-model.tppl"
 
 type ReturnType = ReturnType{
   lambda: Real[], mu: Real, beta: Real, tree: HistoryTree
@@ -77,10 +78,10 @@ model function rejectAccept(
   let unifParams = rateMatrixToUnifMatrix(qMatrix);
   let rootAge = postorderTree.age;
   let leftRepertoireTree = sampleTreeHistory(
-    postorderTree.left, nhosts, leftMsg, rootRep, rootAge, modelParams, unifParams
+    postorderTree.left, nhosts, leftMsg, rootRep, rootAge, modelParams, unifParams, postorderTree.leftKernel
   );
   let rightRepertoireTree = sampleTreeHistory(
-    postorderTree.right, nhosts, rightMsg, rootRep, rootAge, modelParams, unifParams
+    postorderTree.right, nhosts, rightMsg, rootRep, rootAge, modelParams, unifParams, postorderTree.rightKernel
 
   );
 
@@ -145,7 +146,8 @@ function sampleTreeHistory(
   parentRep: Int[],
   parentAge: Real,
   modelParams: ModelParams,
-  unifParams: UniformizationParams
+  unifParams: UniformizationParams,
+  branchKernel: Matrix[Real]
 ): HistoryTree {
   if tree is MsgLeaf {
     // We are at a leaf, so we don't need to sample the interactions
@@ -159,8 +161,10 @@ function sampleTreeHistory(
       nhosts,
       modelParams,
       unifParams,
+      branchKernel,
       0
     );
+    /*
     debugNode(
       "Leaf",
       tree.label,
@@ -168,6 +172,7 @@ function sampleTreeHistory(
       branchSample.logExcess,
       0.0
     );
+    */
     // We are aligned so we can weight the program here (shouldn't matter for MCMC)
     if branchSample.success {
       logWeight branchSample.logExcess - branchSample.logDebt;
@@ -197,8 +202,10 @@ function sampleTreeHistory(
       nhosts,
       modelParams,
       unifParams,
+      branchKernel,
       0
     );
+    /*
     debugNode(
       "Node",
       tree.label,
@@ -206,6 +213,7 @@ function sampleTreeHistory(
       branchSample.logExcess,
       nodeLogDebt
     );
+    */
     // We are aligned so we can weight the program here (shouldn't matter for MCMC)
     if branchSample.success {
       logWeight branchSample.logExcess - branchSample.logDebt - nodeLogDebt;
@@ -220,10 +228,10 @@ function sampleTreeHistory(
 
     // Sample the two subtrees
     let left = sampleTreeHistory(
-      tree.left, nhosts, leftMsg, rep, tree.age, modelParams, unifParams
+      tree.left, nhosts, leftMsg, rep, tree.age, modelParams, unifParams, tree.leftKernel
     );
     let right = sampleTreeHistory(
-      tree.right, nhosts, rightMsg, rep, tree.age, modelParams, unifParams
+      tree.right, nhosts, rightMsg, rep, tree.age, modelParams, unifParams, tree.rightKernel
     );
 
     return HistoryNode {
@@ -245,28 +253,37 @@ function sampleBranch(
   nhosts: Int,
   modelParams: ModelParams,
   unifParams: UniformizationParams,
+  branchKernel: Matrix[Real],
   rejectionDepth: Int
 ): CorrectedBranchSample {
   let _MAX_REJECTION_DEPTH_BRANCH = 100;
   if rejectionDepth <= _MAX_REJECTION_DEPTH_BRANCH {
     // Sample the events per host
     let unorderedBranch = sampleUnorderedBranch(
-      startRep, finalRep, startAge, finalAge, 1, nhosts, unifParams
+      startRep, finalRep, startAge, finalAge, 1, nhosts, unifParams, modelParams.embeddedQMatrix
     );
 
-    // Sort the events
-    let orderedEvents = qSort(compAge, unorderedBranch.history);
+    // Compile the events for all hosts and sort them
+    let allHostEvents = join(unorderedBranch.history);
+    let orderedEvents = qSort(compAge, allHostEvents);
     let nEvents = length(orderedEvents);
     if allTimesValidBranch(startRep, orderedEvents, 1, nEvents, nhosts) {
       // The branch is correct along the full history, 
       // accept and calculate the true weight of the sample
+      
+      // Calculate the debt -- this is the density of the endpoint conditioned
+      // (parallel) chains at the current sample. 
+      let logDebt = independenceLikelihoodEndCond(
+        startRep, finalRep, startAge, finalAge, unorderedBranch.history, modelParams, branchKernel
+      );
+      // Calculate the likelihood of the path under the full model
       let logExcess = fullModelWeight(
         1, startRep, finalRep, startAge, finalAge, orderedEvents, nEvents, nhosts, modelParams
       );
       // Return the branch sample with both the debt and the excess
       return CorrectedBranchSample {
         history = orderedEvents,
-        logDebt = unorderedBranch.logDebt,
+        logDebt = logDebt,
         logExcess = logExcess,
         success = true
       };
@@ -280,6 +297,7 @@ function sampleBranch(
         nhosts,
         modelParams,
         unifParams,
+        branchKernel,
         rejectionDepth + 1
       );
     }
@@ -315,25 +333,24 @@ function sampleUnorderedBranch(
   finalAge: Real,
   hostIndex: Int,
   nhosts: Int,
-  unifParams: UniformizationParams
+  unifParams: UniformizationParams,
+  embeddedQMatrix: EmbeddedMarkovChainMatrix
 ): BranchSample {
   // Note that startAge > finalAge since the tree is moving forwards in time
   if hostIndex <= nhosts {
     let hostHistory = sampleHostHistory(
-      startRep[hostIndex], finalRep[hostIndex], startAge, finalAge, hostIndex, unifParams
+      startRep[hostIndex], finalRep[hostIndex], startAge, finalAge, hostIndex, unifParams, embeddedQMatrix
     );
     let otherHostHistories = sampleUnorderedBranch(
-      startRep, finalRep, startAge, finalAge, hostIndex + 1, nhosts, unifParams
+      startRep, finalRep, startAge, finalAge, hostIndex + 1, nhosts, unifParams, embeddedQMatrix
     );
     return BranchSample {
-      history = join([hostHistory.history, otherHostHistories.history]),
-      logDebt = hostHistory.logDebt + otherHostHistories.logDebt,
+      history = cons(hostHistory.history, otherHostHistories.history),
       success = otherHostHistories.success
     };
   } else {
     return BranchSample {
       history = [],
-      logDebt = 0.0,
       success = true
     };
   }
@@ -346,20 +363,25 @@ function sampleHostHistory(
   startAge: Real,
   finalAge: Real,
   host: Int,
-  unifParams: UniformizationParams
-): BranchSample {
+  unifParams: UniformizationParams,
+  embeddedQMatrix: EmbeddedMarkovChainMatrix
+): HostBranchSample {
+  /* 
+   * This function produces samples from the random variable
+   *     X(t) | X(0) = a, X(T) = b
+   * i.e. the endpoint conditioned CTMC. To pay back 
+   * the debt from this subprocedure we therefore must account 
+   * for the end point conditioning 
+   */
+
   // Sample the number of events on the branch
   assume u ~ Uniform(0., 1.);
-  let nEventsAndDebt = invTransSampleNEvents(
+  let nEvents = invTransSampleNEvents(
     u, unifParams, startAge - finalAge, startState, finalState
   );
-  let nEvents = nEventsAndDebt.n;
-  let nEventsDebt = nEventsAndDebt.logProb;
 
   // Sample when they occur
-  let eventTimesAndDebt = getEventTimes(nEvents, startAge, finalAge);
-  let eventTimes = eventTimesAndDebt.eventTimes;
-  let eventTimesDebt = eventTimesAndDebt.logDebt;
+  let eventTimes = getEventTimes(nEvents, startAge, finalAge);
 
   // Sample how they occur
   let markovChain = forwardsBackardsAlgorithm(
@@ -368,6 +390,7 @@ function sampleHostHistory(
     finalState,
     nEvents
   );
+
   // Create proper events
   let eventsWithSelf = zipWith(
     function(t: MCTransition, eT: Real) {
@@ -378,9 +401,10 @@ function sampleHostHistory(
         host = host
       };
     },
-    markovChain.transitions,
+    markovChain,
     eventTimes
   );
+
   // Remove self transitions
   let events = fold(
     function(acc: Event[], e: Event) {
@@ -388,6 +412,7 @@ function sampleHostHistory(
         return acc;
       } else {
         // Not sure if there is an `append`?
+        // (Could be written with foldr, but might confuse)
         return join([
           acc,
           [e]
@@ -397,9 +422,9 @@ function sampleHostHistory(
     [],
     eventsWithSelf
   );
-  return BranchSample {
+
+  return HostBranchSample {
     history = events, 
-    logDebt = nEventsDebt + eventTimesDebt + markovChain.logDebt,
     success = true
   };
 }

@@ -2,17 +2,13 @@ import "lib.mc"
 import "container-types.tppl"
 import "stdlib::seq.mc"
 
-type NEvents = NEvents {
-  n: Int, logProb: Real
-}
-
 function invTransSampleNEvents(
   u: Real,
   unifParams: UniformizationParams,
   t: Real,
   a: Int,
   b: Int
-): NEvents {
+): Int {
   /*
    * Sample the number of events conditional on the end state with 
    * inverse transform sampling. 
@@ -34,7 +30,7 @@ function invTransSampleNEvents(
   // Compute the probability of there no event on branch
   let accProb = poissonProb * bool2real(a == b) / totalTransProb;
   if u < accProb {
-    return NEvents { n = 0, logProb = log(accProb)};
+    return 0;
   } else {
     let nStates = dim(unifParams.qMatrix)[1];
     let firstRa = mtxRowKroneckerDelta(a + 1, nStates);
@@ -62,7 +58,7 @@ function eventHelper(
   totalTransProb: Real,
   prevPoissonVal: Real,
   accProb: Real
-): NEvents {
+): Int {
   // Compute the probabilities of being in different states after n steps
   let newRa = mtxMul(prevRa, unifParams.uMatrix);
   // Get the probability of being in state b after n steps
@@ -74,7 +70,7 @@ function eventHelper(
   // Accumulate the acceptance probabiltity
   let newAccProb = accProb + newProb;
   if u < newAccProb {
-    return NEvents { n = n, logProb = log(newProb) };
+    return n;
   } else {
     return eventHelper(
       u,
@@ -90,14 +86,9 @@ function eventHelper(
   }
 }
 
-type EventTimes = EventTimes {
-  eventTimes: Real[],
-  logDebt: Real
-}
-
 function getEventTimes(
   nEvents: Int, startTime: Real, endTime: Real
-): EventTimes {
+): Real[] {
   // Sample n uniform variables on the branch
   let unorderedEventTimes = sapply(
     range(0, nEvents, 1),
@@ -117,16 +108,6 @@ function getEventTimes(
     },
     unorderedEventTimes
   );
-  // Since we sort the events, the density for the event times is given by
-  //     n! 1 / (b - a)^n I_{[a, b]^n}(x).
-  // The factorial comes from sorting the array
-  let logDebt = fold(
-    function(acc: Real, k: Int) {
-      return acc + log(Real(k)) - log(startTime - endTime);
-    },
-    0.0,
-    range(1, nEvents + 1, 1)
-  );
-  return EventTimes { eventTimes = eventTimes, logDebt = logDebt };
+  return eventTimes;
 }
 

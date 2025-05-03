@@ -7,18 +7,13 @@ type MCTransition = MCTransition {
   toState: Int
 }
 
-type MCAndDebt = MCAndDebt {
-  transitions: MCTransition[],
-  logDebt: Real
-}
-
 // Forward-backward algorithm for sampling a Markov chain conditioned on start and end states
 function forwardsBackardsAlgorithm(
   kernel: Matrix[Real],
   startState: Int,
   endState: Int,
   nSteps: Int
-): MCAndDebt {
+): MCTransition[] {
   // The backward kernel is the transpose
   let backwardsKernel = mtxTrans(kernel);
   // Compute the backwards messages
@@ -47,24 +42,20 @@ function sampleStateForwards(
   prevState: Int,
   backwardMsgs: Matrix[Real][],
   nSteps: Int
-): MCAndDebt {
+): MCTransition[] {
   if i < nSteps {
     let forwardMsg = mtxGetRow(prevState + 1, kernel); // The forward transition probabilities is just the correct row vector of the kernel
     let backwardMsg = backwardMsgs[i]; // Get the backward transition probabilities 
     let totMsg = mtxNormalize(mtxElemMul(forwardMsg, backwardMsg));
     let param = colMatToSeq(totMsg);
     assume sampleState ~ Categorical(param); // Sample the next state
-    let currDebt = categoricalLogPdf(sampleState, param);
     let restOfChain = sampleStateForwards(i + 1, kernel, sampleState, backwardMsgs, nSteps);
-    return MCAndDebt {
-      transitions = cons(
-        MCTransition {fromState = prevState, toState = sampleState},
-        restOfChain.transitions
-      ),
-      logDebt = currDebt + restOfChain.logDebt
-    };
+    return cons(
+      MCTransition {fromState = prevState, toState = sampleState},
+      restOfChain
+    );
   } else {
-    return MCAndDebt { transitions = [], logDebt = 0.0};
+    return [];
   }
 }
 

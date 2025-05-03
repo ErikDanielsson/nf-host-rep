@@ -37,7 +37,11 @@ type Event = Event {eventTime: Real, fromState: Int, toState: Int, host: Int}
 // Container type for the history along a branch,
 // along with the debt from the independence model
 type BranchSample = BranchSample {
-  history: Event[], logDebt: Real, success: Bool
+  history: Event[][], success: Bool
+}
+
+type HostBranchSample = HostBranchSample {
+  history: Event[], success: Bool
 }
 
 // Like the above but with the excess from the full model too

@@ -74,10 +74,10 @@ model function rejectAccept(
   };
   let rootAge = postorderTree.age;
   let leftRepertoireTree = sampleTreeHistory(
-    postorderTree.left, nhosts, leftMsg, rootRep, rootAge, modelParams
+    postorderTree.left, nhosts, leftMsg, rootRep, rootAge, modelParams, postorderTree.leftKernel
   );
   let rightRepertoireTree = sampleTreeHistory(
-    postorderTree.right, nhosts, rightMsg, rootRep, rootAge, modelParams
+    postorderTree.right, nhosts, rightMsg, rootRep, rootAge, modelParams, postorderTree.rightKernel
   );
 
   // Construct the root node of the repertoire tree
@@ -140,7 +140,8 @@ function sampleTreeHistory(
   preorderMsg: Matrix[Real],
   parentRep: Int[],
   parentAge: Real,
-  modelParams: ModelParams
+  modelParams: ModelParams,
+  branchKernel: Matrix[Real]
 ): HistoryTree {
   if tree is MsgLeaf {
     // We are at a leaf, so we don't need to sample the interactions
@@ -153,8 +154,10 @@ function sampleTreeHistory(
       tree.age,
       nhosts,
       modelParams,
+      branchKernel,
       0
     );
+    /*
     debugNode(
       "Leaf",
       tree.label,
@@ -162,6 +165,7 @@ function sampleTreeHistory(
       branchSample.logExcess,
       0.0
     );
+    */
     // We are aligned so we can weight the program here (shouldn't matter for MCMC)
     if branchSample.success {
       logWeight branchSample.logExcess - branchSample.logDebt;
@@ -190,8 +194,10 @@ function sampleTreeHistory(
       tree.age,
       nhosts,
       modelParams,
+      branchKernel,
       0
     );
+    /*
     debugNode(
       "Node",
       tree.label,
@@ -199,6 +205,7 @@ function sampleTreeHistory(
       branchSample.logExcess,
       nodeLogDebt
     );
+    */
     // We are aligned so we can weight the program here (shouldn't matter for MCMC)
     if branchSample.success {
       logWeight branchSample.logExcess - branchSample.logDebt - nodeLogDebt;
@@ -214,10 +221,10 @@ function sampleTreeHistory(
 
     // Sample the two subtrees
     let left = sampleTreeHistory(
-      tree.left, nhosts, leftMsg, rep, tree.age, modelParams
+      tree.left, nhosts, leftMsg, rep, tree.age, modelParams, tree.leftKernel
     );
     let right = sampleTreeHistory(
-      tree.right, nhosts, rightMsg, rep, tree.age, modelParams
+      tree.right, nhosts, rightMsg, rep, tree.age, modelParams, tree.rightKernel
     );
 
     return HistoryNode {
@@ -238,6 +245,7 @@ function sampleBranch(
   finalAge: Real,
   nhosts: Int,
   modelParams: ModelParams,
+  branchKernel: Matrix[Real],
   rejectionDepth: Int
 ): CorrectedBranchSample {
   let _MAX_REJECTION_DEPTH_BRANCH = 100;
@@ -247,19 +255,29 @@ function sampleBranch(
       startRep, finalRep, startAge, finalAge, 1, nhosts, modelParams.embeddedQMatrix, 1
     );
     if unorderedBranch.success {
-      // All host histories were sampled correctly, sort the events
-      let orderedEvents = qSort(compAge, unorderedBranch.history);
+
+      // All host histories were sampled correctly,
+      // compile the events for all hosts and sort them
+      let allHostsEvents = join(unorderedBranch.history);
+      let orderedEvents = qSort(compAge, allHostEvents);
       let nEvents = length(orderedEvents);
       if allTimesValidBranch(startRep, orderedEvents, 1, nEvents, nhosts) {
         // The branch is correct along the full history, 
         // accept and calculate the true weight of the sample
+        
+        // Calculate the debt -- this is the density of the endpoint conditioned
+        // (parallel) chains at the current sample. 
+        let logDebt = independenceLikelihoodEndCond(
+          startRep, finalRep, startAge, finalAge, unorderedBranch.history, modelParams, branchKernel
+        );
+        // Calculate the likelihood of the path under the full model
         let logExcess = fullModelWeight(
           1, startRep, finalRep, startAge, finalAge, orderedEvents, nEvents, nhosts, modelParams
         );
         // Return the branch sample with both the debt and the excess
         return CorrectedBranchSample {
           history = orderedEvents,
-          logDebt = unorderedBranch.logDebt,
+          logDebt = logDebt,
           logExcess = logExcess,
           success = true
         };
@@ -274,6 +292,7 @@ function sampleBranch(
       finalAge,
       nhosts,
       modelParams,
+      branchKernel,
       rejectionDepth + 1
     );
   } else {
@@ -322,8 +341,7 @@ function sampleUnorderedBranch(
         startRep, finalRep, startAge, finalAge, hostIndex + 1, nhosts, embeddedQMatrix, 0
       );
       return BranchSample {
-        history = join([hostHistory.history, otherHostHistories.history]),
-        logDebt = hostHistory.logDebt + otherHostHistories.logDebt,
+        history = cons(hostHistory.history, otherHostHistories.history),
         success = otherHostHistories.success
       };
     } else {
@@ -334,7 +352,6 @@ function sampleUnorderedBranch(
       } else {
         return BranchSample {
           history = [],
-          logDebt = -log(0.),
           success = false
         };
       }
@@ -342,7 +359,6 @@ function sampleUnorderedBranch(
   } else {
     return BranchSample {
       history = [],
-      logDebt = 0.0,
       success = true
     };
   }
@@ -365,7 +381,6 @@ function sampleHostHistory(
     // printLn(">>>>>UNALIGNED: TRUNCATED EXPONENTIAL");
     let t = sampleTruncatedExponential(totalRate, startAge - finalAge);
     // printLn("<<<<<UNALIGNED: TRUNCATED EXPONENTIAL");
-    let timeLogDebt = truncatedExponentialLogPdf(t, totalRate, startAge - finalAge);
     let eventTime = startAge - t;
 
     // Sample the next event
@@ -374,14 +389,12 @@ function sampleHostHistory(
     // printLn(join(["<<<<<UNALIGNED Trunc: CATEGORICAL ", int2string(host)]));
     let param = embeddedQMatrix.transitionProbs[startState + 1];
 
-    let stateLogDebt = categoricalLogPdf(nextState, param); 
     let restOfHistory = sampleHostHistory(nextState, finalState, eventTime, finalAge, host, embeddedQMatrix, stepIndex + 1);
     return BranchSample {
       history = cons(
         Event { eventTime = eventTime, fromState = startState, toState = nextState, host = host },
         restOfHistory.history
       ),
-      logDebt = stateLogDebt + timeLogDebt + restOfHistory.logDebt,
       success = restOfHistory.success
     };
 
@@ -391,19 +404,16 @@ function sampleHostHistory(
     // printLn(">>>>>UNALIGNED: EXPONENTIAL");
     assume t ~ Exponential(totalRate);
     // printLn("<<<<<UNALIGNED: EXPONENTIAL");
-    let timeLogDebt = exponentialLogPdf(t, totalRate);
     if startAge - t < finalAge {
       // We overshoot so we are finished, and just save the debt
       if startState == finalState {
         return BranchSample {
           history = [],
-          logDebt = timeLogDebt,
           success = true
         };
       } else {
         return BranchSample {
           history = [],
-          logDebt = timeLogDebt,
           success = false
         };
       }
@@ -416,37 +426,16 @@ function sampleHostHistory(
       // assume nextState ~ Categorical(param);
       // printLn(join(["<<<<<UNALIGNED      : CATEGORICAL ", int2string(host)]));
 
-      let stateLogDebt = categoricalLogPdf(nextState, param); 
-
       // Record the event time
       let eventTime = startAge - t;
-
       let restOfHistory = sampleHostHistory(nextState, finalState, eventTime, finalAge, host, embeddedQMatrix, stepIndex + 1);
       return BranchSample {
         history = cons(
           Event { eventTime = eventTime, fromState = startState, toState = nextState, host = host },
           restOfHistory.history
         ),
-        logDebt = stateLogDebt + timeLogDebt + restOfHistory.logDebt,
         success = restOfHistory.success
       };
     }
   }
-}
-
-/*
- * Sampling and log pdf for truncated exponential
- */ 
-function sampleTruncatedExponential(rate: Real, maxT: Real): Real {
-  let uMin = exp(-rate * maxT);
-  // Assuming directly from the truncated distribution gave numerical errors
-  assume u_ ~ Uniform(0.0, 1.0);
-  let u = uMin + u_ * (1. - uMin);
-  let expSample = -log(u) / rate;
-  return expSample;
-}
-
-function truncatedExponentialLogPdf(t: Real, rate: Real, maxT: Real) {
-  // The pdf is f(y) / F(maxT) where f and F are pdfs and cdfs for the exponential
-  return log(rate) - t * rate - log(1. - exp(-rate * maxT));
 }
