@@ -297,10 +297,11 @@ def create_multi_fig(fig_name, images_and_captions):
 def generate_report(run_name, burnin=0):
     # Set .gen.qmd as file ending so that we can remove
     # any automatically generated report files
-    make_tppl_trace = False
-    make_rb_trace = False
+    make_tppl_trace = True
+    make_rb_trace = True
     make_tppl_tree_plot = False
     incremental = True
+    debug_output = False
     ph_path_from_base_dir = "python_helpers/"
     ph_path_from_self = "."
     report_name = f"report_{run_name}.gen.qmd"
@@ -309,6 +310,7 @@ def generate_report(run_name, burnin=0):
     groupby_keys_rb = ["file_type", "genid", "param_id"]
 
     groupby_tppl_key = lambda x: (x[2], x[1], x[0])
+    groupby_rb_key = lambda x: (x[2], x[1])
 
     # Execute the python code we need to determine what pipeline was executed
     global_variables = {}
@@ -346,13 +348,14 @@ def generate_report(run_name, burnin=0):
             ),
             global_variables,
         )
-        exec(
-            subst_variables(
-                tppl_log_cell_template,
-                {},
-            ),
-            global_variables,
-        )
+        if debug_output:
+            exec(
+                subst_variables(
+                    tppl_log_cell_template,
+                    {},
+                ),
+                global_variables,
+            )
         if make_tppl_tree_plot:
             exec(
                 subst_variables(tppl_tree_plots_cell_template, {}),
@@ -368,7 +371,8 @@ def generate_report(run_name, burnin=0):
             ),
             global_variables,
         )
-        groupby_values_rb = global_variables["reduced_df_rb"].index
+        groupby_values_rb = list(global_variables["reduced_df_rb"].index)
+        groupby_values_rb.sort(key=groupby_rb_key)
 
     # Generate the report
     with open(report_name, "w") as fh:
@@ -402,8 +406,9 @@ def generate_report(run_name, burnin=0):
             fh.write(create_quarto_cell(data_params_cell_template))
             fh.write(create_text(missing_simulations_text))
             fh.write(create_quarto_cell(missing_simulations_cell_template))
-            fh.write(tppl_log_text)
-            fh.write(create_quarto_cell(tppl_log_cell_template))
+            if debug_output:
+                fh.write(tppl_log_text)
+                fh.write(create_quarto_cell(tppl_log_cell_template))
 
         if global_variables["has_rb"]:
             fh.write(
@@ -412,6 +417,14 @@ def generate_report(run_name, burnin=0):
                     {
                         "___groupby_keys___": groupby_keys_rb,
                     },
+                )
+            )
+
+        if global_variables["has_tppl"]:
+            fh.write(
+                create_quarto_cell(
+                    create_multi_chain_tppl_cell_template,
+                    {"___groupby_keys___": groupby_keys_tppl},
                 )
             )
 
@@ -436,14 +449,6 @@ def generate_report(run_name, burnin=0):
                         },
                     )
                 )
-
-        if global_variables["has_tppl"]:
-            fh.write(
-                create_quarto_cell(
-                    create_multi_chain_tppl_cell_template,
-                    {"___groupby_keys___": groupby_keys_tppl},
-                )
-            )
 
         if global_variables["has_tppl"] and make_tppl_trace:
             for groupby_value in groupby_values_tppl:

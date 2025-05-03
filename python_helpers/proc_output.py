@@ -153,7 +153,7 @@ def get_missing_params(file_df, compile_param_fn):
             for ids, cids in missing_compile_ids.items()
             for cid in cids
         ],
-        columns=["genid", "compile_id"],
+        columns=["param_id", "genid", "compile_id"],
     )
     return missing_df.merge(compile_params_df, on="compile_id", how="left")
 
@@ -269,29 +269,57 @@ def read_tppl_log_file(fn):
         "rejected": 0,
         "duration_ms": [],
     }
+    node_stats = {}
     with open(fn) as fh:
         for line in fh:
             # Check if the line looks like json
-            if line.startswith("{"):
+            start = '{"accepted'
+            if line.startswith(start):
                 parsed_line = json.loads(line)
-                if parsed_line["accepted"]:
-                    stats["accepted"] += 1
+                if "accepted" in parsed_line:
+                    if parsed_line["accepted"]:
+                        stats["accepted"] += 1
+                    else:
+                        stats["rejected"] += 1
+                    stats["duration_ms"].append(parsed_line["durationMs"])
+                """
                 else:
-                    stats["rejected"] += 1
-                stats["duration_ms"].append(parsed_line["durationMs"])
-    return stats
+                    node = parsed_line["label"]
+                    if node not in node_stats:
+                        node_stats[node] = {
+                            "log_debt_branch": [],
+                            "log_excess_branch": [],
+                            "log_debt_node": [],
+                        }
+                    node_stats[node]["log_debt_branch"].append(
+                        parsed_line["logDebtBranch"]
+                    )
+                    node_stats[node]["log_excess_branch"].append(
+                        parsed_line["logExcessBranch"]
+                    )
+                    node_stats[node]["log_debt_node"].append(
+                        parsed_line.get("logDebtNode", 0)
+                    )
+                """
+    return stats, node_stats
 
 
 def process_tppl_log_file(fn):
-    stats = read_tppl_log_file(fn)
+    stats, node_stats = read_tppl_log_file(fn)
     count = len(stats["duration_ms"])
     avg_accept = stats["accepted"] / count
     avg_duration_ms = sum(stats["duration_ms"]) / count
-    return {
+    proc_stats = {
         "count": count,
         "avg_accept": avg_accept,
         "avg_duration_ms": avg_duration_ms,
     }
+    proc_node_stats = {}
+    for n, s in node_stats.items():
+        proc_node_stats[f"node_{n}_avg_ldb"] = np.mean(s["log_debt_branch"])
+        proc_node_stats[f"node_{n}_avg_leb"] = np.mean(s["log_excess_branch"])
+        proc_node_stats[f"node_{n}_avg_ldn"] = np.mean(s["log_debt_node"])
+    return proc_stats
 
 
 def parse_tppl_logs(
