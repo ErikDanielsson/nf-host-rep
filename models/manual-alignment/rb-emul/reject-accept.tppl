@@ -7,6 +7,7 @@ import "dist-helpers.tppl"
 import "full-model.tppl"
 import "rb-drift-kernels.tppl"
 import "custom-debug-info.tppl"
+import "independence-model.tppl"
 
 type ReturnType = ReturnType{
   lambda: Real[], mu: Real, beta: Real, tree: HistoryTree
@@ -258,7 +259,7 @@ function sampleBranch(
 
       // All host histories were sampled correctly,
       // compile the events for all hosts and sort them
-      let allHostsEvents = join(unorderedBranch.history);
+      let allHostEvents = join(unorderedBranch.history);
       let orderedEvents = qSort(compAge, allHostEvents);
       let nEvents = length(orderedEvents);
       if allTimesValidBranch(startRep, orderedEvents, 1, nEvents, nhosts) {
@@ -373,7 +374,7 @@ function sampleHostHistory(
   host: Int,
   embeddedQMatrix: EmbeddedMarkovChainMatrix,
   stepIndex: Int
-): BranchSample {
+): HostBranchSample {
   let totalRate = embeddedQMatrix.totalRates[startState + 1];
   if startState != finalState && stepIndex == 1 {
     // If there is a mutation on the interval, sample the first event from a truncated exponential
@@ -390,7 +391,7 @@ function sampleHostHistory(
     let param = embeddedQMatrix.transitionProbs[startState + 1];
 
     let restOfHistory = sampleHostHistory(nextState, finalState, eventTime, finalAge, host, embeddedQMatrix, stepIndex + 1);
-    return BranchSample {
+    return HostBranchSample {
       history = cons(
         Event { eventTime = eventTime, fromState = startState, toState = nextState, host = host },
         restOfHistory.history
@@ -407,12 +408,12 @@ function sampleHostHistory(
     if startAge - t < finalAge {
       // We overshoot so we are finished, and just save the debt
       if startState == finalState {
-        return BranchSample {
+        return HostBranchSample {
           history = [],
           success = true
         };
       } else {
-        return BranchSample {
+        return HostBranchSample {
           history = [],
           success = false
         };
@@ -429,7 +430,7 @@ function sampleHostHistory(
       // Record the event time
       let eventTime = startAge - t;
       let restOfHistory = sampleHostHistory(nextState, finalState, eventTime, finalAge, host, embeddedQMatrix, stepIndex + 1);
-      return BranchSample {
+      return HostBranchSample {
         history = cons(
           Event { eventTime = eventTime, fromState = startState, toState = nextState, host = host },
           restOfHistory.history
@@ -438,4 +439,13 @@ function sampleHostHistory(
       };
     }
   }
+}
+
+function sampleTruncatedExponential(rate: Real, maxT: Real): Real {
+  let uMin = exp(-rate * maxT);
+  // Assuming directly from the truncated distribution gave numerical errors
+  assume u_ ~ Uniform(0.0, 1.0);
+  let u = uMin + u_ * (1. - uMin);
+  let expSample = -log(u) / rate;
+  return expSample;
 }
