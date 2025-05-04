@@ -43,7 +43,7 @@ model function rejectAccept(
   let qMatrix = mtxSclrMul(mu, r);
 
 
-  let nestedInteractions = nestList(interactions, nhosts, nhosts);
+  let nestedInteractions = nestList(interactions, ntips, nhosts);
   let postorderTree = postorderTraverse(symbiont_tree, qMatrix, nestedInteractions, nhosts);
 
   // Sample the root. We assume in both the independence and full model

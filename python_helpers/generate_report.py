@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+import argparse
 
 preamble_str = """---
 title: "TreePPL host repertoire"
@@ -77,7 +78,7 @@ df = proc_output.create_inference_data_df(
         ),
     },
     ___burnin___,
-    1,
+    ___subsample_period___,
 )
 dfs = {k: v for k, v in df.groupby("file_type")}
 
@@ -119,6 +120,23 @@ if not missing_df.empty:
     print(missing_df)
 else:
     print("All runs finished!")
+"""
+
+tppl_data_tree_plots_cell_template = """
+df_sim = proc_output.get_files_in_dir(
+    datadir,
+    {
+        "simtrees": proc_output.get_simtree_output_pattern(),
+    },
+    fields=["param_id", "genid"],
+)
+df_trees = proc_output.get_trees(df_sim, file_type="simtrees")
+tree_plot_paths = []
+for i in df_trees.index:
+    tree_plot_path = proc_output.create_graphviz_tree_plot(
+        df_trees.loc[i, "trees"], i, RUN_NAME
+    )
+    tree_plot_paths.append(tree_plot_path)
 """
 
 tppl_log_text = """
@@ -294,14 +312,18 @@ def create_multi_fig(fig_name, images_and_captions):
     return "".join(lines)
 
 
-def generate_report(run_name, burnin=0):
+def generate_report(
+    run_name,
+    burnin=0,
+    subsample_period=1,
+    make_tppl_trace=True,
+    make_rb_trace=True,
+    make_tppl_tree_plot=False,
+    debug_output=False,
+    incremental=True,
+):
     # Set .gen.qmd as file ending so that we can remove
     # any automatically generated report files
-    make_tppl_trace = True
-    make_rb_trace = True
-    make_tppl_tree_plot = False
-    incremental = True
-    debug_output = False
     ph_path_from_base_dir = "python_helpers/"
     ph_path_from_self = "."
     report_name = f"report_{run_name}.gen.qmd"
@@ -329,6 +351,7 @@ def generate_report(run_name, burnin=0):
             read_outputs_cell_template,
             {
                 "___burnin___": burnin,
+                "___subsample_period___": subsample_period,
                 "___tppl_file_reader___": (
                     "read_tppl_incremental_file" if incremental else "read_tppl_file"
                 ),
@@ -373,6 +396,13 @@ def generate_report(run_name, burnin=0):
         )
         groupby_values_rb = list(global_variables["reduced_df_rb"].index)
         groupby_values_rb.sort(key=groupby_rb_key)
+    exec(
+        subst_variables(
+            tppl_data_tree_plots_cell_template,
+            {},
+        ),
+        global_variables,
+    )
 
     # Generate the report
     with open(report_name, "w") as fh:
@@ -391,6 +421,7 @@ def generate_report(run_name, burnin=0):
                 read_outputs_cell_template,
                 {
                     "___burnin___": burnin,
+                    "___subsample_period___": subsample_period,
                     "___tppl_file_reader___": (
                         "read_tppl_incremental_file"
                         if incremental
@@ -427,6 +458,19 @@ def generate_report(run_name, burnin=0):
                     {"___groupby_keys___": groupby_keys_tppl},
                 )
             )
+        fh.write(
+            create_quarto_cell(
+                tppl_data_tree_plots_cell_template,
+                {},
+            )
+        )
+        data_tree_plot_paths = global_variables["tree_plot_paths"]
+        fh.write(
+            create_multi_fig(
+                "data_tree_plots",
+                zip(data_tree_plot_paths, data_tree_plot_paths),
+            )
+        )
 
         if global_variables["has_rb"] and make_rb_trace:
             for groupby_value in groupby_values_rb:
@@ -515,10 +559,67 @@ def generate_report(run_name, burnin=0):
 
 
 def main():
-    import sys
 
-    run_name = sys.argv[1]
-    generate_report(run_name)
+    parser = argparse.ArgumentParser(
+        prog="nf-host-rep-report-generator",
+        description="Generate a report for a run of the nf-host-rep pipeline",
+        epilog="",
+    )
+    parser.add_argument("run-name")
+    parser.add_argument(
+        "--tppl-trace",
+        type=bool,
+        default=True,
+        help="Generate trace plots for TreePPL output",
+    )
+    parser.add_argument(
+        "--rb-trace",
+        type=bool,
+        default=True,
+        help="Generate trace plots for RevBayes output",
+    )
+    parser.add_argument(
+        "--tppl-tree",
+        type=bool,
+        default=False,
+        help="Generate tree plots for TreePPL output",
+    )
+    parser.add_argument(
+        "--debug-output",
+        type=bool,
+        default=False,
+        help="Generate a summary of the debug output from TreePPL",
+    )
+    parser.add_argument(
+        "--incremental-printing",
+        type=bool,
+        default=True,
+        help="Indicate whether incremental printing was used by TreePPL",
+    )
+    parser.add_argument(
+        "--burnin",
+        type=int,
+        default=0,
+        help="Indicate what burnin period to use",
+    )
+    parser.add_argument(
+        "--subsample-period",
+        type=int,
+        default=1,
+        help="Indicate what subsampling to use (on top of subsampling from infernence methods)",
+    )
+    args = parser.parse_args()
+    run_name = getattr(args, "run-name")
+    generate_report(
+        run_name,
+        make_tppl_trace=args.tppl_trace,
+        make_rb_trace=args.rb_trace,
+        make_tppl_tree_plot=args.tppl_tree,
+        incremental=args.incremental_printing,
+        debug_output=args.debug_output,
+        burnin=args.burnin,
+        subsample_period=args.subsample_period,
+    )
 
 
 if __name__ == "__main__":

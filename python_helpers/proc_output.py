@@ -57,10 +57,14 @@ def get_rb_output_pattern():
     return re.compile(r"out\.(\d+)\.(\d+)\.(\d+)\.log$")
 
 
+def get_simtree_output_pattern():
+    return re.compile(r"simtree_and_interactions\.(\d+)\.(\d+)\.json")
+
+
 def get_files_in_dir(
     dir: Path,
     patterns: dict[str, re.Pattern],
-    header=["file_type", "param_id", "genid", "compile_id", "filename"],
+    fields=["param_id", "genid", "compile_id"],
 ):
     ll = []
     for file in dir.glob("**/*"):
@@ -70,7 +74,7 @@ def get_files_in_dir(
             if m is not None:
                 file_ids = map(int, m.groups())
                 ll.append((k, *file_ids, file))
-    df = pd.DataFrame(ll, columns=header)
+    df = pd.DataFrame(ll, columns=["file_type"] + fields + ["filename"])
     return df
 
 
@@ -350,25 +354,26 @@ def get_json_tree_tppl_incr(fn):
     return tree_samples
 
 
-def parse_tree(json_tree_samples):
-    def initial_tree(first_tree):
-        data = first_tree["__data__"]
-        if "right" in data:
-            return {
-                "label": str(data["label"]),
-                "age": data["age"],
-                "repertoire": [data["repertoire"]],
-                "hlen": [len(data["history"])],
-                "right": initial_tree(data["right"]),
-                "left": initial_tree(data["left"]),
-            }
-        else:
-            return {
-                "label": str(data["label"]),
-                "age": data["age"],
-                "repertoire": [data["repertoire"]],
-            }
+def parse_single_tree(tree):
+    data = tree["__data__"]
+    if "right" in data:
+        return {
+            "label": str(data["label"]),
+            "age": data["age"],
+            "repertoire": [data["repertoire"]],
+            "hlen": [len(data["history"])],
+            "right": parse_single_tree(data["right"]),
+            "left": parse_single_tree(data["left"]),
+        }
+    else:
+        return {
+            "label": str(data["label"]),
+            "age": data["age"],
+            "repertoire": [data["repertoire"]],
+        }
 
+
+def parse_tree(json_tree_samples):
     def append_repertoires(tree_sample, parsed_tree):
         data = tree_sample["__data__"]
         if "right" in parsed_tree:
@@ -381,7 +386,7 @@ def parse_tree(json_tree_samples):
         else:
             parsed_tree["repertoire"].append(data["repertoire"])
 
-    tree = initial_tree(json_tree_samples[0])
+    tree = parse_single_tree(json_tree_samples[0])
     for tree_sample in json_tree_samples[1:]:
         append_repertoires(tree_sample, tree)
     return tree
@@ -392,7 +397,7 @@ def tree_map(tree, func, inkeys, outkey):
 
         val = (
             func(*[tree[k] for k in inkeys])
-            if all(map(lambda k: k in tree), inkeys)
+            if all(map(lambda k: k in tree, inkeys))
             else None
         )
         return dict(
@@ -406,7 +411,7 @@ def tree_map(tree, func, inkeys, outkey):
     else:
         val = (
             func(*[tree[k] for k in inkeys])
-            if all(map(lambda k: k in tree), inkeys)
+            if all(map(lambda k: k in tree, inkeys))
             else None
         )
         return dict(
@@ -422,8 +427,8 @@ def tree_filter(tree, keys):
         return dict(
             [(k, v) for k, v in tree.items() if k in keys]
             + [
-                ("right", tree_filter(tree["right"])),
-                ("left", tree_filter(tree["left"])),
+                ("right", tree_filter(tree["right"], keys)),
+                ("left", tree_filter(tree["left"], keys)),
             ]
         )
     else:
@@ -478,8 +483,18 @@ def create_dot_tree(tree, dot):
             height="1.2",
             imagescale="true",
         )
-        dot.edge(tree["label"], str(tree["right"]["label"]), headlabel=tree["jumps"])
-        dot.edge(tree["label"], str(tree["left"]["label"]), headlabel=tree["jumps"])
+        dot.edge(
+            tree["label"],
+            str(tree["right"]["label"]),
+            headlabel="0",
+            len=str(tree["age"] - tree["right"]["age"]),
+        )
+        dot.edge(
+            tree["label"],
+            str(tree["left"]["label"]),
+            headlabel="0",
+            len=str(tree["age"] - tree["left"]["age"]),
+        )
         create_dot_tree(tree["left"], dot)
         create_dot_tree(tree["right"], dot)
     else:
@@ -504,9 +519,10 @@ def create_graphviz_tree_plot(json_tree, id, tempdir_suffix):
         mat_tree = tree_filter(mat_tree, {"mhlen", "avg_rep", "label", "age"})
         print(mat_tree)
         heat_map_tempdir = tempdir / f"heatmaps.{id}"
-        heat_map_tempdir.mkdir()
+        heat_map_tempdir.mkdir(exist_ok=True)
         heat_map_tree = heat_tree(mat_tree, heat_map_tempdir)
-        dot = graphviz.Digraph()
+        dot = graphviz.Digraph(engine="neato")
+        dot.attr(overlap="false")
         create_dot_tree(heat_map_tree, dot)
         print()
         path = dot.render(file_path, format="png")
@@ -515,8 +531,8 @@ def create_graphviz_tree_plot(json_tree, id, tempdir_suffix):
         return f"{file_path}.png"
 
 
-def get_trees(df_fn):
-    df_fn = df_fn[df_fn["file_type"] == "tppl"]
+def get_trees(df_fn, file_type="tppl"):
+    df_fn = df_fn[df_fn["file_type"] == file_type]
     df_fn = df_fn.reset_index()
     df_fn["trees"] = [
         get_json_tree_tppl_incr(row["filename"]) for _, row in df_fn.iterrows()
