@@ -1,0 +1,10 @@
+phy_plant_fn = args[1]
+fn = "host_names_to_index.csv"
+
+phy_plant <- readTrees(phy_plant_fn)[1]
+write("", filename=fn, append=FALSE, separator=" ")
+for (i in 1:phy_plant.nnodes()) {
+    write(i + " ", filename=fn, append=TRUE, separator=" ")
+    write(phy_plant.nodeName(i) + "\n", filename=fn, append=TRUE)
+}
+q()

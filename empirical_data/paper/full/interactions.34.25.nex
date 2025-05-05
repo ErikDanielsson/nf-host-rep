@@ -1,0 +1,43 @@
+#NEXUS
+
+Begin data;
+Dimensions ntax=34 nchar=25;
+Format datatype=Standard symbols="0123456789" missing=? gap=-;
+Matrix
+Hypanartia_lethe               0000000000000002200000000
+Hypanartia_bella               0000000000000002200000000
+Vanessa_itea                   0000000000000000200000000
+Vanessa_annabella              0000000000000000200200000
+Vanessa_hippomene              0000000000000000200000000
+Vanessa_dimorphica             0000000000000000200000200
+Vanessa_kershawi               0000000000000000000000200
+Vanessa_cardui                 0000000000020000200200222
+Vanessa_virginiensis           0000000000020000200200202
+Vanessa_abyssinica             0000000000000000200000000
+Vanessa_atalanta               0000000000000000200000000
+Vanessa_tameamea               0000000000000000200000000
+Vanessa_indica                 0000000000000010201000000
+Antanartia_delius              0000000000000000200000000
+Aglais_io                      0000000000000001200000000
+Aglais_milberti                0000000000000000200000000
+Aglais_urticae                 0000000000000001200000000
+Kaniska_canace                 0000000200000000000000000
+Nymphalis_l_album              0000000000000020022000000
+Nymphalis_polychloros          0000000000002020102011000
+Nymphalis_californica          0000000000000200000000000
+Nymphalis_xanthomelas          0000000000000011102000000
+Nymphalis_antiopa              0000001000012022122010000
+Polygonia_c_aureum             0000000000000002100000000
+Polygonia_egea                 0000000000000000200000000
+Polygonia_faunus               0000000000000000122022000
+Polygonia_c_album              0000000000000022222021000
+Polygonia_satyrus              0000000000000002202000000
+Polygonia_interrogationis      0000000000000022200000000
+Polygonia_comma                0000000000000022200000000
+Polygonia_oreas                0000000000000000000020000
+Polygonia_progne               0000000000000000020022000
+Polygonia_zephyrus             0000000000000010000022000
+Polygonia_gracilis             0000000000000000000020000
+;
+End;
+

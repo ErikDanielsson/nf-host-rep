@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 import argparse
+import pandas as pd
 
 preamble_str = """---
 title: "TreePPL host repertoire"
@@ -328,7 +329,7 @@ def generate_report(
     ph_path_from_self = "."
     report_name = f"report_{run_name}.gen.qmd"
 
-    groupby_keys_tppl = ["model_dir", "model_name", "genid", "param_id"]
+    groupby_keys_tppl = ["file_type", "model_dir", "model_name", "genid", "param_id"]
     groupby_keys_rb = ["file_type", "genid", "param_id"]
 
     groupby_tppl_key = lambda x: (x[2], x[1], x[0])
@@ -391,8 +392,11 @@ def generate_report(
                 subst_variables(tppl_tree_plots_cell_template, {}),
                 global_variables,
             )
-        groupby_values_tppl = list(global_variables["reduced_df_tppl"].index)
-        groupby_values_tppl.sort(key=groupby_tppl_key)
+        df_groupby_values_tppl = global_variables["reduced_df_tppl"].index.to_frame(
+            index=False
+        )
+        df_groupby_values = df_groupby_values_tppl
+        # groupby_values_tppl.sort(key=groupby_tppl_key)
     if global_variables["has_rb"]:
         exec(
             subst_variables(
@@ -401,8 +405,15 @@ def generate_report(
             ),
             global_variables,
         )
-        groupby_values_rb = list(global_variables["reduced_df_rb"].index)
-        groupby_values_rb.sort(key=groupby_rb_key)
+        df_groupby_values_rb = global_variables["reduced_df_rb"].index.to_frame(
+            index=False
+        )
+        if global_variables["has_rb"]:
+            df_groupby_values = pd.concat(
+                [df_groupby_values_tppl, df_groupby_values_rb], ignore_index=True
+            )
+        else:
+            df_groupby_values = df_groupby_values_rb
     exec(
         subst_variables(
             tppl_data_tree_plots_cell_template,
@@ -490,50 +501,65 @@ def generate_report(
             plots_and_titles.append((path, title))
         fh.write(create_multi_fig("data_tree_plots", plots_and_titles))
 
-        if global_variables["has_rb"] and make_rb_trace:
-            for groupby_value in groupby_values_rb:
-                fh.write(
-                    create_text(
-                        rb_trace_plot_text,
-                        {
-                            "___groupby_keys___": groupby_keys_rb,
-                            "___groupby_value___": groupby_value,
-                        },
+        if make_rb_trace or make_tppl_trace:
+            df_groupby_values = df_groupby_values.sort_values(
+                by=["genid", "param_id", "file_type", "model_dir", "model_name"]
+            )
+            for _, row in df_groupby_values.iterrows():
+                if row.file_type == "rb":
+                    groupby_value = (
+                        row.file_type,
+                        row.genid,
+                        row.param_id,
                     )
-                )
-                fh.write(
-                    create_quarto_cell(
-                        rb_trace_plot_cell_template,
-                        {
-                            "___fig_counter___": get_fig_counter(),
-                            "___nsamples___": 2500,
-                            "___groupby_value___": groupby_value,
-                        },
+                    fh.write(
+                        create_text(
+                            rb_trace_plot_text,
+                            {
+                                "___groupby_keys___": groupby_keys_rb,
+                                "___groupby_value___": groupby_value,
+                            },
+                        )
                     )
-                )
+                    fh.write(
+                        create_quarto_cell(
+                            rb_trace_plot_cell_template,
+                            {
+                                "___fig_counter___": get_fig_counter(),
+                                "___nsamples___": 2500,
+                                "___groupby_value___": groupby_value,
+                            },
+                        )
+                    )
+                else:
+                    groupby_value = (
+                        row.file_type,
+                        row.model_dir,
+                        row.model_name,
+                        row.genid,
+                        row.param_id,
+                    )
+                    fh.write(
+                        create_text(
+                            tppl_trace_plot_text,
+                            {
+                                "___groupby_value___": groupby_value,
+                                "___groupby_keys___": groupby_keys_tppl,
+                            },
+                        )
+                    )
+                    fh.write(
+                        create_quarto_cell(
+                            tppl_trace_plot_cell_template,
+                            {
+                                "___fig_counter___": get_fig_counter(),
+                                "___nsamples___": str(2500),
+                                "___groupby_value___": groupby_value,
+                                "___groupby_keys___": groupby_keys_tppl,
+                            },
+                        )
+                    )
 
-        if global_variables["has_tppl"] and make_tppl_trace:
-            for groupby_value in groupby_values_tppl:
-                fh.write(
-                    create_text(
-                        tppl_trace_plot_text,
-                        {
-                            "___groupby_value___": groupby_value,
-                            "___groupby_keys___": groupby_keys_tppl,
-                        },
-                    )
-                )
-                fh.write(
-                    create_quarto_cell(
-                        tppl_trace_plot_cell_template,
-                        {
-                            "___fig_counter___": get_fig_counter(),
-                            "___nsamples___": str(2500),
-                            "___groupby_value___": groupby_value,
-                            "___groupby_keys___": groupby_keys_tppl,
-                        },
-                    )
-                )
         if global_variables["has_tppl"] and make_tppl_tree_plot:
             fh.write(
                 create_quarto_cell(
