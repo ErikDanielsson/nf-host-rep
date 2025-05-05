@@ -34,17 +34,24 @@ process rev_annotate_tree {
 
     output:
         tuple val(genid), path("${input.getBaseName()}" + ".rev.tre"), emit: rev_tree
+        tuple val(genid), path("${input.getBaseName()}" + ".node_index_map.csv"), emit: name_map
 
     script:
+    def labeled_tree_fn = "${input.baseName}.rev.tre"
+    def name_map_fn = "${input.baseName}.node_index_map.csv"
     """
     annotate_tree.Rev \
         --args ${input} \
-        --args ${input.baseName}.rev.tre
+        --args ${labeled_tree_fn}
+    node_name_to_index.Rev \
+        --args ${labeled_tree_fn} \
+        --args ${name_map_fn}
     """
 
     stub:
     """
-    touch ${input.getBaseName()}.rev.tre
+    touch ${labeled_tree_fn}
+    touch ${name_map_fn}
     """
 }
 /*

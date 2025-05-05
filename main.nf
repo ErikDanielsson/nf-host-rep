@@ -2,10 +2,13 @@ nextflow.enable.dsl=2
 
 include {
     generate_trees;
-    rev_annotate_tree;
-    // generate_phyjson;
     clean_phyjson;
     tree_phyjson;
+} from "./modules/gendata/trees"
+
+include {
+    rev_annotate_tree as rev_annotate_tree_host;
+    rev_annotate_tree as rev_annotate_tree_symbiont;
 } from "./modules/gendata/trees"
 
 include {
@@ -41,9 +44,7 @@ include {
 
 workflow {
     // Define the simulations
-    def genid = Channel.of((1..params.ngens)) 
     def runid = Channel.of((1..params.nruns))
-
 
     def nhosts = params.nhosts
     def nsymbionts = params.nsymbionts
@@ -70,16 +71,43 @@ workflow {
         newLine: true
     ) {pid, mu, beta, l0, l1, l2, l3 -> "$pid\t$mu\t$beta\t$l0\t$l1\t$l2\t$l3"}
 
-    // Generate data from a coalescent model
-    generate_trees(
-        genid,
-        nsymbionts,
-        nhosts
-    )
+
+
+    def host_tree_ch
+    def symbiont_tree_ch
+    def genid
+    if (params.empirical_trees) {
+        def tree_id = 0
+        def empirical_trees_ch = Channel.fromPath("${params.empirical_trees}/*", type: 'dir')
+            .map { dir -> 
+                def h = dir.listFiles().find { it.name ==~  /.*\.host\..*\.phy/}
+                def s = dir.listFiles().find { it.name ==~ /.*\.symbiont\..*\.phy/}
+                return (h && s) ? tuple(h, s) : null
+            }
+            .filter {it != null}
+            .map {s, h -> [tree_id++, s, h]}
+        host_tree_ch = empirical_trees_ch.map { tid, hpath, spath -> [tid, hpath]}
+        symbiont_tree_ch = empirical_trees_ch.map { tid, hpath, spath -> [tid, spath]}
+        genid = empirical_trees_ch.map { tid, hpath, spath -> tid }
+    } else {
+        genid = Channel.of((1..params.ngens)) 
+        // Generate data from a coalescent model
+        generate_trees(
+            genid,
+            nsymbionts,
+            nhosts
+        )
+        symbiont_tree_ch = generate_trees.out.symbiont_tree
+        host_tree_ch = generate_trees.out.host_tree
+    }
 
     // Pass the symbiont tree through revbayes to give it node labels
-    rev_annotate_tree(
-        generate_trees.out.symbiont_tree
+    rev_annotate_tree_symbiont(
+        symbiont_tree_ch
+    )
+
+    rev_annotate_tree_host(
+        host_tree_ch
     )
 
     // Construct a phyjson file containing the symbiont tree
@@ -87,8 +115,8 @@ workflow {
     // The cleaning step is necessary due to the fact that 
     // R does not distinguish floats and ints
     partial_phyjson_ch = tree_phyjson(
-        rev_annotate_tree.out.rev_tree.join(
-            generate_trees.out.host_tree
+        rev_annotate_tree_symbiont.out.rev_tree.join(
+            host_tree_ch
         )
     ) | clean_phyjson
 
@@ -96,8 +124,8 @@ workflow {
     def interactions_nex_ch
     if (params.interactions == "revbayes") {
 
-        revbayes_interactions_in_ch = rev_annotate_tree.out.rev_tree.join(
-            generate_trees.out.host_tree
+        revbayes_interactions_in_ch = rev_annotate_tree_symbiont.out.rev_tree.join(
+           host_tree_ch 
         ).join(
             params_config_ch
         )
@@ -112,8 +140,7 @@ workflow {
         interactions_csv_ch = clean_rb_csv.out.interactions_csv
         
     } else if (params.interactions == "treeppl") {
-        tppl_sim_ch = genid.combine(Channel.of("$baseDir/bin/simulate.tppl").first())
-
+        tppl_sim_ch = params_config_ch.map { row -> row[0] }.combine(Channel.of("$baseDir/bin/simulate.tppl").first())
         compile_interactions_tppl(
             tppl_sim_ch,
             "-m mcmc-lightweight --align --cps full --kernel --sampling-period 1 --incremental-printing --debug-iterations",
@@ -123,19 +150,26 @@ workflow {
             .combine(params_config_ch)
             .map {
                 gid, pjs, pid, m, b, l1, l2, l3, l4 ->
-                [gid, pid, pjs, m, b, l1, l2, l3, l4]
+                [pid, gid, pjs, m, b, l1, l2, l3, l4]
             }
         add_params_phyjson(params_in_ch)
 
+        // Join the channels by the parameter id
         interactions_sim_in_ch = compile_interactions_tppl.out.sim_bin.combine(
             add_params_phyjson.out.phyjson, by: 0
         )
+
         run_interactions_tppl(
             interactions_sim_in_ch
         )
 
         interactions_csv_ch = interactions_json_to_csv(
             run_interactions_tppl.out.interactions_json
+            .combine(
+                rev_annotate_tree_host.out.name_map, by: 0
+            ).combine(
+                rev_annotate_tree_symbiont.out.name_map, by: 0
+            )
         )
 
         interactions_nex_ch = interactions_csv_to_nex(
@@ -157,7 +191,9 @@ workflow {
     }
 
     add_interactions_to_phyjson(
-        partial_phyjson_ch.combine(
+        partial_phyjson_ch.join(
+            rev_annotate_tree_symbiont.out.name_map
+        ).combine(
             interactions_csv_ch, by: 0
         )
     ) 
@@ -239,8 +275,8 @@ workflow {
 
     if (params.run_revbayes) {
         rev_bayes_in_ch = runid.combine(
-            generate_trees.out.symbiont_tree
-            .join(generate_trees.out.host_tree)
+           symbiont_tree_ch 
+            .join(host_tree_ch)
             .combine(interactions_nex_ch, by: 0)
         )
 

@@ -1,0 +1,10 @@
+#! /usr/bin/env rb
+phylo_fn = args[1]
+fn = args[2]
+
+phylo <- readTrees(phylo_fn)[1]
+write("", filename=fn, append=FALSE, separator=" ")
+for (i in 1:phylo.nnodes()) {
+    write(phylo.nodeName(i) + "\t" + i + "\n", filename=fn, append=TRUE)
+}
+q()

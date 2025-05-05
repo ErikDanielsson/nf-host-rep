@@ -8,20 +8,20 @@ process compile_interactions_tppl {
     container "${ params.container_treeppl }"
 
     input: 
-        tuple val(genid), path(model_path)
+        tuple val(param_id), path(model_path)
         val(flags) 
     
     output:
-        tuple val(genid), path("sim.${genid}.out"), emit: sim_bin
+        tuple val(param_id), path("sim.${param_id}.out"), emit: sim_bin
     
     script: 
     """
     tpplc $baseDir/bin/simulate.tppl \
-        --output sim.${genid}.out \
+        --output sim.${param_id}.out \
         --particles 0 \
-        --seed ${genid} \
+        --seed ${param_id} \
         ${flags}
-    chmod +x sim.${genid}.out
+    chmod +x sim.${param_id}.out
     """
 }
 
@@ -31,7 +31,7 @@ process run_interactions_tppl {
     container "${ params.container_treeppl }"
     
     input:
-        tuple val(genid), path(sim_bin), val(param_id), path(phyjson_file)
+        tuple val(param_id), path(sim_bin), val(genid), path(phyjson_file)
 
     output:
         tuple val(genid), val(param_id), path("simtree_and_interactions.${param_id}.${genid}.json"), emit: interactions_json
@@ -53,12 +53,12 @@ process add_params_phyjson {
 
     input:
         tuple(
-            val(genid), val(param_id), path(partial_phyjson_path),
+            val(param_id), val(genid), path(partial_phyjson_path),
             val(mu), val(beta),
             val(lambda01), val(lambda10), val(lambda12), val(lambda21)
         )
     output:
-        tuple val(genid), val(param_id), path("pre_interaction.${param_id}.${genid}.json"), emit: phyjson
+        tuple val(param_id), val(genid), path("pre_interaction.${param_id}.${genid}.json"), emit: phyjson
     
     script:
     """
@@ -81,7 +81,7 @@ process interactions_json_to_csv {
     container "${ params.container_python }"
 
     input:
-        tuple val(genid), val(param_id), path(int_sim_path)
+        tuple val(genid), val(param_id), path(int_sim_path), path(host_name_map), path(symbiont_name_map)
 
     output:
         tuple val(genid), val(param_id), path("interactions.${param_id}.${genid}.csv"), emit: interactions_csv
@@ -90,6 +90,8 @@ process interactions_json_to_csv {
     """
     interactions_json_to_csv.py \
         ${int_sim_path} \
+        ${host_name_map} \
+        ${symbiont_name_map} \
         interactions.${param_id}.${genid}.csv
     """
 
@@ -113,7 +115,7 @@ process interactions_csv_to_nex {
     
     script:
     """
-    interactions_csv_to_nex.R ${interactions_csv_path} interactions.${param_id}.${genid}.nex
+    interactions_csv_to_nex.R ${interactions_csv_path} interactions.${param_id}.${genid}.nex 
     """
 
     stub:

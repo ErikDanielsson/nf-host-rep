@@ -509,7 +509,7 @@ def create_dot_tree(tree, dot):
         )
 
 
-def create_graphviz_tree_plot(json_tree, id, tempdir_suffix):
+def create_graphviz_tree_plot(json_tree, id, tempdir_suffix, dist_tree=False):
     tempdir = get_temp_dir(tempdir_suffix)
     file_path = tempdir / f"treeplot.{id}"
     if not file_path.exists():
@@ -517,14 +517,15 @@ def create_graphviz_tree_plot(json_tree, id, tempdir_suffix):
         avg_len_tree = tree_avg_hist_len(parsed_tree)
         mat_tree = tree_avg_rep(parsed_tree)
         mat_tree = tree_filter(mat_tree, {"mhlen", "avg_rep", "label", "age"})
-        print(mat_tree)
         heat_map_tempdir = tempdir / f"heatmaps.{id}"
         heat_map_tempdir.mkdir(exist_ok=True)
         heat_map_tree = heat_tree(mat_tree, heat_map_tempdir)
-        dot = graphviz.Digraph(engine="neato")
-        dot.attr(overlap="false")
+        if dist_tree:
+            dot = graphviz.Digraph(engine="neato")
+            dot.attr(overlap="false")
+        else:
+            dot = graphviz.Digraph()
         create_dot_tree(heat_map_tree, dot)
-        print()
         path = dot.render(file_path, format="png")
         return path
     else:

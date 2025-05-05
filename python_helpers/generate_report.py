@@ -107,7 +107,7 @@ The models were run on dataset generated with the following parameters
 
 data_params_cell_template = """
 data_params = proc_output.parse_data_params(data_params_path)
-data_params
+data_params.sort_values(by="param_id")
 """
 
 missing_simulations_text = """
@@ -131,12 +131,12 @@ df_sim = proc_output.get_files_in_dir(
     fields=["param_id", "genid"],
 )
 df_trees = proc_output.get_trees(df_sim, file_type="simtrees")
-tree_plot_paths = []
-for i in df_trees.index:
+tree_plot_paths = {}
+for _, row in df_trees.iterrows():
     tree_plot_path = proc_output.create_graphviz_tree_plot(
-        df_trees.loc[i, "trees"], i, RUN_NAME
+        row.trees, f"{row.genid}.{row.param_id}", RUN_NAME
     )
-    tree_plot_paths.append(tree_plot_path)
+    tree_plot_paths[(row.genid, row.param_id)] = tree_plot_path
 """
 
 tppl_log_text = """
@@ -241,9 +241,9 @@ plt.show()
 tppl_tree_plots_cell_template = """
 df_trees = proc_output.get_trees(df_fn)
 tree_plot_paths = []
-for i in df_trees.index:
+for row in df_trees:
     tree_plot_path = proc_output.create_graphviz_tree_plot(
-        df_trees.loc[i, "trees"], i, RUN_NAME
+        row["trees"], f"{row[genid]}.{row[param_id]}", RUN_NAME
     )
     tree_plot_paths.append(tree_plot_path)
 """
@@ -359,6 +359,13 @@ def generate_report(
         ),
         global_variables,
     )
+    exec(
+        subst_variables(
+            data_params_cell_template,
+            {},
+        ),
+        global_variables,
+    )
     if global_variables["has_tppl"]:
         exec(
             subst_variables(compile_params_cell_template),
@@ -430,11 +437,12 @@ def generate_report(
                 },
             )
         )
+        fh.write(create_text(data_params_text))
+        fh.write(create_quarto_cell(data_params_cell_template))
+
         if global_variables["has_tppl"]:
             fh.write(create_text(compile_params_text))
             fh.write(create_quarto_cell(compile_params_cell_template))
-            fh.write(create_text(data_params_text))
-            fh.write(create_quarto_cell(data_params_cell_template))
             fh.write(create_text(missing_simulations_text))
             fh.write(create_quarto_cell(missing_simulations_cell_template))
             if debug_output:
@@ -465,12 +473,22 @@ def generate_report(
             )
         )
         data_tree_plot_paths = global_variables["tree_plot_paths"]
-        fh.write(
-            create_multi_fig(
-                "data_tree_plots",
-                zip(data_tree_plot_paths, data_tree_plot_paths),
+        data_params = global_variables["data_params"]
+        data_params_mi = data_params.set_index("param_id")
+        plots_and_titles = []
+        for genid, param_id in sorted(data_tree_plot_paths.keys()):
+            param_row = data_params_mi.loc[param_id, :]
+            title = (
+                f"Tree {genid}, history with params: mu = {param_row.mu},"
+                f" beta = {param_row.beta},"
+                f" lambda01 = {param_row.lambda01},"
+                f" lambda10 = {param_row.lambda10},"
+                f" lambda12 = {param_row.lambda12},"
+                f" lambda21 = {param_row.lambda21},"
             )
-        )
+            path = data_tree_plot_paths[(genid, param_id)]
+            plots_and_titles.append((path, title))
+        fh.write(create_multi_fig("data_tree_plots", plots_and_titles))
 
         if global_variables["has_rb"] and make_rb_trace:
             for groupby_value in groupby_values_rb:
@@ -567,15 +585,13 @@ def main():
     )
     parser.add_argument("run-name")
     parser.add_argument(
-        "--tppl-trace",
-        type=bool,
-        default=True,
+        "--no-tppl-trace",
+        action="store_true",
         help="Generate trace plots for TreePPL output",
     )
     parser.add_argument(
-        "--rb-trace",
-        type=bool,
-        default=True,
+        "--no-rb-trace",
+        action="store_true",
         help="Generate trace plots for RevBayes output",
     )
     parser.add_argument(
@@ -612,8 +628,8 @@ def main():
     run_name = getattr(args, "run-name")
     generate_report(
         run_name,
-        make_tppl_trace=args.tppl_trace,
-        make_rb_trace=args.rb_trace,
+        make_tppl_trace=not args.no_tppl_trace,
+        make_rb_trace=not args.no_rb_trace,
         make_tppl_tree_plot=args.tppl_tree,
         incremental=args.incremental_printing,
         debug_output=args.debug_output,
