@@ -146,7 +146,6 @@ workflow {
         tppl_sim_ch = params_config_ch.map {
                 pid, mu, beta, l0, l1, l2, l3, s -> [pid, s]
             }.combine(Channel.of("$baseDir/bin/simulate.tppl").first())
-        tppl_sim_ch.view()
         compile_interactions_tppl(
             tppl_sim_ch,
             "-m mcmc-lightweight --align --cps full --kernel --sampling-period 1 --incremental-printing --debug-iterations",
