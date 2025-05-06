@@ -63,13 +63,14 @@ workflow {
             row.lambda10,
             row.lambda12,
             row.lambda21,
+            row.seed,
         ]}
 
     params_config_ch.collectFile(
         name: "param_id_to_configuration.csv",
         storeDir: file(params.datadir),
         newLine: true
-    ) {pid, mu, beta, l0, l1, l2, l3 -> "$pid\t$mu\t$beta\t$l0\t$l1\t$l2\t$l3"}
+    ) {pid, mu, beta, l0, l1, l2, l3, s -> "$pid\t$mu\t$beta\t$l0\t$l1\t$l2\t$l3\t$s"}
 
 
 
@@ -127,7 +128,9 @@ workflow {
         revbayes_interactions_in_ch = rev_annotate_tree_symbiont.out.rev_tree.join(
            host_tree_ch 
         ).join(
-            params_config_ch
+            params_config_ch.map {
+                pid, mu, beta, l0, l1, l2, l3, s -> [pid, mu, beta, l0, l1, l2, l3]
+            }
         )
 
         revbayes_interactions(
@@ -140,7 +143,10 @@ workflow {
         interactions_csv_ch = clean_rb_csv.out.interactions_csv
         
     } else if (params.interactions == "treeppl") {
-        tppl_sim_ch = params_config_ch.map { row -> row[0] }.combine(Channel.of("$baseDir/bin/simulate.tppl").first())
+        tppl_sim_ch = params_config_ch.map {
+                pid, mu, beta, l0, l1, l2, l3, s -> [pid, s]
+            }.combine(Channel.of("$baseDir/bin/simulate.tppl").first())
+        tppl_sim_ch.view()
         compile_interactions_tppl(
             tppl_sim_ch,
             "-m mcmc-lightweight --align --cps full --kernel --sampling-period 1 --incremental-printing --debug-iterations",
@@ -149,7 +155,7 @@ workflow {
         params_in_ch = partial_phyjson_ch
             .combine(params_config_ch)
             .map {
-                gid, pjs, pid, m, b, l1, l2, l3, l4 ->
+                gid, pjs, pid, m, b, l1, l2, l3, l4, s ->
                 [pid, gid, pjs, m, b, l1, l2, l3, l4]
             }
         add_params_phyjson(params_in_ch)

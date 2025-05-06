@@ -541,25 +541,35 @@ def get_trees(df_fn, file_type="tppl"):
     return df_fn
 
 
-def inference_data_from_dataframe(df, chain=0, burnin=0, subsample=1):
+def inference_data_from_dataframe(df, run_name, chain=0, burnin=0, subsample=1):
     index = df.index[burnin::subsample]
     df = df.iloc[index, :]
-    df.loc[:, "chain"] = chain
+    df.loc[:, "chain"] = 0
     df.loc[:, "draw"] = index
-    df = df.set_index(["chain", "draw"])
+    df.loc[:, "group"] = run_name
+    df = df.set_index(["chain", "draw", "group"])
     xdata = xr.Dataset.from_dataframe(df)
     return az.InferenceData(posterior=xdata)
 
 
 def create_inference_data_df(file_df, read_funcs, burnin, subsample=1):
+    def row_to_chain_name(row):
+        return (
+            f"{row["file_type"]}."
+            f"{row["genid"]}."
+            f"{row["param_id"]}."
+            f"{row["compile_id"]}."
+        )
+
     file_df["inference_data"] = [
         inference_data_from_dataframe(
             read_funcs[row["file_type"]](row["filename"]),
-            chain=hash((row["genid"], row["compile_id"])),
+            row_to_chain_name(row),
+            chain=i,
             burnin=burnin,
             subsample=subsample,
         )
-        for _, row in file_df.iterrows()
+        for i, row in file_df.iterrows()
     ]
     return file_df
 
@@ -568,7 +578,12 @@ def create_multi_chain_dataset_df(
     inference_datas, save_cols, data_col="inference_data"
 ):
     def reduce_col(inference_col):
-        concat = lambda x, y: az.concat(x, y, dim="chain")
+        def concat(x, y):
+            t = az.InferenceData(
+                posterior=xr.concat([x.posterior, y.posterior], dim="group")
+            )
+            return t
+
         return reduce(concat, inference_col)
 
     return inference_datas.groupby(save_cols).agg(
@@ -576,12 +591,41 @@ def create_multi_chain_dataset_df(
     )
 
 
+def get_rhat_dataframe(indep_chain_df, data_col="multi_channel"):
+    rhat = indep_chain_df.loc[:, "multi_channel"].apply(
+        lambda x: pd.Series(
+            az.rhat(x.posterior.rename({"group": "chain", "chain": "group"}))
+        ).apply(lambda v: float(v))
+    )
+    rhat_df = pd.concat([indep_chain_df, rhat], axis=1).drop(columns=data_col)
+    return rhat_df
+
+
 def approx_eq(f1, f2):
     APPROX_SENSE = 1e-10
     return abs(f1 - f2) < APPROX_SENSE
 
 
-def get_ess_df(df, groupby, data_col="inference_data"):
+def get_all_ess_df(
+    df_tppl, df_rb, groupby_tppl, groupby_rb, groupby_data, tempdir_suffix
+):
+    tempdir = get_temp_dir(tempdir_suffix)
+    temp_fn = tempdir / "ess_all.csv"
+    if not temp_fn.exists():
+        df_ess_tppl = get_ess_df(df_tppl, groupby_tppl, groupby_data)
+        df_ess_rb = get_ess_df(df_rb, groupby_rb, groupby_data)
+        df_ess = pd.concat([df_ess_rb, df_ess_tppl])
+        df_ess = df_ess.reset_index()
+        df_ess.to_csv(temp_fn)
+        return df_ess
+    else:
+        return pd.read_csv(temp_fn, index_col=0)
+
+
+title_counter = 0
+
+
+def get_ess_df(df, name_cols, groupby_cols, data_col="inference_data"):
 
     def xarray_to_series(data: az.InferenceData):
         N = len(data.posterior.draw)
@@ -592,13 +636,20 @@ def get_ess_df(df, groupby, data_col="inference_data"):
             index=vars,
         )
 
-    index_name = "index"
-    df.index.name = index_name
-    df_mi = df.reset_index()
-    df_mi = df_mi.set_index(groupby + [index_name])
-    df_mi = df_mi[data_col].apply(xarray_to_series)
-    df_mi = df_mi.reset_index()
-    return df_mi
+    def create_title(row, name_cols):
+        global title_counter
+        title_counter += 1
+        return (
+            ".".join(str(row[c]) for c in name_cols if c in row) + f".{title_counter}"
+        )
+
+    name_cols_no_groupby = list(set(name_cols) - set(groupby_cols))
+    ess_cols_df = df[data_col].apply(xarray_to_series)
+    ess_cols_df["name"] = df[name_cols_no_groupby].apply(
+        lambda r: create_title(r, name_cols), axis=1
+    )
+    df_ess = pd.concat([ess_cols_df, df[groupby_cols]], axis=1)
+    return df_ess
 
 
 def ess_group_bar_plot(df_ess, groupby):
@@ -623,14 +674,22 @@ def calc_ess(df, data_col="inference_data"):
     return df_ess
 
 
-def ess_bar_plot(df_ess, ax=None):
-    df_ess_long = df_ess.melt(id_vars="index", var_name="Variable", value_name="ESS")
+def ess_bar_plot(
+    df_ess,
+    ax=None,
+    var_cols=["mu", "beta", "lambda_01", "lambda_10", "lambda_12", "lambda_21"],
+):
+    df_ess = df_ess.sort_values(by="name")
+    df_ess_long = df_ess[["name"] + var_cols].melt(
+        id_vars="name", var_name="Variable", value_name="ESS"
+    )
     return sns.barplot(
         data=df_ess_long,
         y="Variable",
         x="ESS",
-        hue="index",
-        legend=False,
+        hue="name",
+        legend=True,
+        errorbar=None,
         ax=ax,
     )
 

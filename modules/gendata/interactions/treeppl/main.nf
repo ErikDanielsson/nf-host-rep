@@ -8,7 +8,7 @@ process compile_interactions_tppl {
     container "${ params.container_treeppl }"
 
     input: 
-        tuple val(param_id), path(model_path)
+        tuple val(param_id), val(seed), path(model_path)
         val(flags) 
     
     output:
@@ -19,7 +19,7 @@ process compile_interactions_tppl {
     tpplc $baseDir/bin/simulate.tppl \
         --output sim.${param_id}.out \
         --particles 0 \
-        --seed ${param_id} \
+        --seed ${seed} \
         ${flags}
     chmod +x sim.${param_id}.out
     """
