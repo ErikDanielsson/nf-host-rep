@@ -574,21 +574,78 @@ def create_inference_data_df(file_df, read_funcs, burnin, subsample=1):
     return file_df
 
 
+def reduce_col(inference_col):
+    def concat(x, y):
+        t = az.InferenceData(
+            posterior=xr.concat([x.posterior, y.posterior], dim="group")
+        )
+        return t
+
+    return reduce(concat, inference_col)
+
+
 def create_multi_chain_dataset_df(
     inference_datas, save_cols, data_col="inference_data"
 ):
-    def reduce_col(inference_col):
-        def concat(x, y):
-            t = az.InferenceData(
-                posterior=xr.concat([x.posterior, y.posterior], dim="group")
-            )
-            return t
-
-        return reduce(concat, inference_col)
 
     return inference_datas.groupby(save_cols).agg(
         multi_channel=pd.NamedAgg(column=data_col, aggfunc=reduce_col)
     )
+
+
+def concat_over_sliced_MI(
+    df_MI: pd.DataFrame, aggr_dims=["genid", "param_id"], agg_col="pooled"
+):
+    df_aggr = df_MI.groupby(aggr_dims).agg(
+        summary=pd.NamedAgg(column=agg_col, aggfunc=reduce_col)
+    )
+    return df_aggr
+
+
+def pool_multi_chain_dataset(
+    indep_chain_df,
+    data_col="multi_channel",
+    pool_col="pooled",
+):
+    def index_to_group_name(index):
+        return ".".join(map(str, index))
+
+    def stack_xr(row):
+        x = row[data_col]
+        stacked = x.posterior.stack(concat_draws=("group", "draw"))
+        stacked = stacked.reset_index("concat_draws")
+        stacked = stacked.drop_vars(["draw", "group"])
+        stacked = stacked.rename(concat_draws="draw")
+        stacked = stacked.assign_coords(draw=np.arange(stacked.sizes["draw"]))
+        stacked = stacked.expand_dims(group=[index_to_group_name(row.name)])
+        x.posterior = stacked
+        return x
+
+    indep_chain_df[pool_col] = indep_chain_df.apply(stack_xr, axis=1)
+    return indep_chain_df
+
+
+def add_dim_pooled_dataset(
+    df_pooled,
+    data_col="pooled",
+    slice_cols=["genid", "param_id"],
+    name_cols=["file_type", "model_name", "model_dir"],
+):
+    def row_to_name(row):
+        return ".".join(v for k, v in row if not pd.isna(v) and k != data_col)
+
+    def new_dims(row):
+        row[data_col].posterior = row[data_col].posterior.expand_dims(
+            {"group": [row_to_name(row)]}
+        )
+        print(row[data_col].posterior)
+        return row[data_col]
+
+    print(df_pooled)
+    df_pooled[data_col] = df_pooled.reset_index()[name_cols + [data_col]].apply(
+        new_dims
+    )
+    return df_pooled
 
 
 def get_rhat_dataframe(indep_chain_df, data_col="multi_channel"):
@@ -598,6 +655,37 @@ def get_rhat_dataframe(indep_chain_df, data_col="multi_channel"):
         ).apply(lambda v: float(v))
     )
     rhat_df = pd.concat([indep_chain_df, rhat], axis=1).drop(columns=data_col)
+    return rhat_df
+
+
+def get_moment_dataframe(
+    df_all,
+    n,
+    data_col="inference_data",
+    keep_cols=[
+        "file_type",
+        "param_id",
+        "genid",
+        "compile_id",
+        "runid",
+        "model_dir",
+        "model_name",
+    ],
+):
+    def n_moments(posterior: xr.Dataset, n):
+        mean = posterior.mean(dim=["draw"])
+        central = posterior - mean
+        moments = [pd.Series(mean).rename(lambda x: x + "_mean")]
+        for k in range(1, n + 1):
+            nth_moment = (central**k).mean(dim=["draw"])
+            s_rep = pd.Series(nth_moment).rename(lambda x: x + f"_cm_{k}")
+            moments.append(s_rep)
+        return pd.concat(moments, axis=0)
+
+    moments = df_all.loc[:, data_col].apply(
+        lambda x: pd.Series(n_moments(x.posterior, n)).apply(lambda v: float(v))
+    )
+    rhat_df = pd.concat([df_all[keep_cols], moments], axis=1)
     return rhat_df
 
 

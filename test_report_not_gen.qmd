@@ -1,0 +1,554 @@
+---
+title: "TreePPL host repertoire"
+format:
+  html:
+    code-fold: true
+  pdf:
+    code-fold: false
+    code-tools: false
+    echo: false
+    fig-width: 6
+    fig-height: 4
+execute:
+  freeze: auto
+jupyter: phylogenetics
+---
+```{python}
+
+# Add the python helper directory to the path
+
+import sys
+import os
+import shutil
+from pathlib import Path
+from functools import reduce
+
+CWD = Path(os.getcwd())
+sys.path.append(str(CWD / "python_helpers/"))
+
+# Import the python helpers
+import proc_output
+
+import arviz as az
+import xarray as xr
+import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
+import warnings
+import pandas as pd
+import numpy as np
+import seaborn as sns
+
+# Suppress warning from arviz
+# -- it complains that all samples are the same
+warnings.filterwarnings(action="ignore", module=r"arviz")
+
+# Set global script options, the rest will follow from these
+RUN_NAME = "alsvin-empirical-trees"
+CACHE = True  # Create a cache of the files to speed up next render?
+CLEAR_CACHE = False  # Clear the cache from a previous render?
+
+# Check if we should clear the cache
+if not CACHE or CLEAR_CACHE:
+    proc_output.clear_temp_dir(tempdir_suffix=RUN_NAME)
+
+# Set the names of the output directories
+glob_outdir = CWD / "simulations"
+outdir = glob_outdir / RUN_NAME
+datadir = outdir / "data"
+simdir = outdir / "sims"
+bindir = outdir / "bins"
+compile_params_path = bindir / "compile_id_to_configuration.csv"
+data_params_path = datadir / "param_id_to_configuration.csv"
+
+```
+```{python}
+
+# Read files
+df = proc_output.get_files_in_dir(
+    simdir,
+    {
+        "tppl": proc_output.get_tppl_output_pattern(),
+        "rb": proc_output.get_rb_output_pattern(),
+    },
+)
+df_fn = df.copy()
+
+df = proc_output.create_inference_data_df(
+    df,
+    {
+        "tppl": lambda fn: proc_output.read_tppl_incremental_file(
+            fn, with_file=CACHE, tempdir_suffix=RUN_NAME
+        ),
+        "rb": lambda fn: proc_output.read_rb_file(
+            fn, with_file=CACHE, tempdir_suffix=RUN_NAME
+        ),
+    },
+    10000,
+    10,
+)
+dfs = {k: v for k, v in df.groupby("file_type")}
+
+has_rb = "rb" in dfs
+has_tppl = "tppl" in dfs
+if has_rb:
+    df_rb = dfs["rb"]
+
+if has_tppl:
+    df_tppl = dfs["tppl"]
+
+```
+
+The models were run on dataset generated with the following parameters
+```{python}
+
+data_params = proc_output.parse_data_params(data_params_path)
+data_params.sort_values(by="param_id")
+
+```
+
+### TreePPL compile params
+The following TreePPL models were compiled
+```{python}
+
+compile_params = proc_output.parse_compile_params(compile_params_path)
+compile_params
+
+```
+```{python}
+df_tppl_with_compile_params = proc_output.add_compile_params(df_tppl, compile_params)
+df = pd.concat([df_rb, df_tppl_with_compile_params])
+fillna_cols = ["model_name", "model_dir"]
+df[fillna_cols] = df[fillna_cols].fillna("rb")
+```
+
+```{python}
+def reduce_col(inference_col):
+    def concat(x, y):
+        t = az.InferenceData(
+            posterior=xr.concat([x.posterior, y.posterior], dim="group")
+        )
+        return t
+
+    return reduce(concat, inference_col)
+
+
+def concat_over_sliced_MI(
+    df_MI: pd.DataFrame,
+    aggr_dims=["genid", "param_id", "file_type", "model_dir", "model_name"],
+    agg_col="inference_data",
+):
+    df_aggr = df_MI.groupby(aggr_dims).agg(
+        pooled=pd.NamedAgg(column=agg_col, aggfunc=reduce_col)
+    )
+    return df_aggr
+
+
+new_df = concat_over_sliced_MI(df).reset_index()
+new_df
+```
+## Make seaborn plot
+```{python}
+df_sns = new_df.set_index(["genid", "param_id"]).sort_values(
+    ["file_type", "model_dir", "model_name"], ascending=False
+)
+base_colors = sns.color_palette("Set1", n_colors=3)
+cs_indep = sns.light_palette(base_colors[2], n_colors=10, reverse=True)
+cs_rb_emul = sns.light_palette(base_colors[1], n_colors=10, reverse=True)
+c_rb = "k"  # , base_colors[2]
+
+hierarchical_palette = {
+    ("tppl", "independence", "reject-accept"): cs_indep[0],
+    ("tppl", "independence", "uniformization"): cs_indep[1],
+    ("tppl", "rb-emul", "reject-accept"): cs_rb_emul[0],
+    ("tppl", "rb-emul", "uniformization"): cs_rb_emul[1],
+    ("rb", "rb", "rb"): c_rb,
+}
+h_style = {
+    ("tppl", "independence", "reject-accept"): {"linestyle": "--"},
+    ("tppl", "independence", "uniformization"): {"linestyle": ":"},
+    ("tppl", "rb-emul", "reject-accept"): {"linestyle": "--"},
+    ("tppl", "rb-emul", "uniformization"): {"linestyle": ":"},
+    ("rb", "rb", "rb"): {},
+}
+vars = ["mu", "beta", "lambda_01", "lambda_10", "lambda_12", "lambda_21"]
+vars_to_tex = {
+    "mu": r"$\mu$",
+    "beta": r"$\beta$",
+    "lambda_01": r"$\lambda_{01}$",
+    "lambda_10": r"$\lambda_{10}$",
+    "lambda_12": r"$\lambda_{12}$",
+    "lambda_21": r"$\lambda_{21}$",
+}
+
+
+def gen_fig_axd():
+    gs_kw = dict(width_ratios=[1] * 6, height_ratios=[1] * 3)
+    fig = plt.figure(figsize=(12, 10))
+    gs = GridSpec(
+        nrows=3,
+        ncols=6,
+        height_ratios=[1, 1, 1],
+        width_ratios=[1] * 6,
+        hspace=0.3,
+        wspace=0.5,
+    )
+    axd = {
+        "mu": fig.add_subplot(gs[0, 0:3]),
+        "beta": fig.add_subplot(gs[0, 3:]),
+        "lambda_01": fig.add_subplot(gs[1, 0:2]),
+        "lambda_10": fig.add_subplot(gs[1, 2:4]),
+        "lambda_12": fig.add_subplot(gs[2, 0:2]),
+        "lambda_21": fig.add_subplot(gs[2, 2:4]),
+    }
+    return fig, axd
+
+
+def get_label(fp, md, mn):
+    return f"RevBayes" if fp == "rb" else f"TreePPL:\n {md}, {mn}"
+```
+```{python}
+
+
+def ess_stats(df):
+    def calc_stats(inf_data):
+        chains = az.InferenceData(
+            posterior=inf_data.posterior.rename({"group": "chain", "chain": "group"})
+        )
+        ess = az.ess(chains, method="bulk")
+        print(ess.to_dataframe())
+        return ess.to_dataframe()
+
+    stats = ["ess", "ess_per_sample"]
+    stats = ["ess"]
+    print(df.index)
+    df = df["pooled"].apply(calc_stats)
+    print(df.index)
+    return df
+
+```
+
+```{python}
+
+gen_hist_idx = 0
+data = df_sns.loc[(0, gen_hist_idx)]
+# Calculate effective sample size across chains
+data
+```
+```{python}
+ess_data = ess_stats(data)
+for k, row in ess_data.iterrows():
+    print(k)
+    print(row["ess"].to_dataframe().reset_index())
+```
+```{python}
+fig, axd = gen_fig_axd()
+for i, (k, row) in enumerate(data.iterrows()):
+    fp = row["file_type"]
+    row_data = row["pooled"].posterior.to_dataframe()
+    m_key = (fp, row["model_dir"], row["model_name"])
+    label = get_label(*m_key)
+    color = hierarchical_palette[m_key]
+    style = h_style[m_key]
+    print(row["pooled"].posterior.to_dataframe())
+    for var in vars:
+        ax = axd[var]
+        sns.kdeplot(
+            data=row_data,
+            x=var,
+            color=color,
+            ax=ax,
+            label=label,
+            legend=False,
+            alpha=1.0,
+            **style,
+        )
+        # Fill
+        sns.kdeplot(
+            data=row_data,
+            x=var,
+            color=color,
+            ax=ax,
+            legend=False,
+            alpha=0.1,
+            linewidth=0,
+            fill=True,
+        )
+
+for var in vars:
+    ax = axd[var]
+    ax.set_xlabel(vars_to_tex[var], fontsize=12)
+    ax.set_ylabel("")
+    if var.startswith("lambda"):
+        ax.set_xlim([0.0, 1.0])
+    else:
+        ax.set_xlim(left=0.0)
+    gen_val = (
+        data_params.loc[gen_hist_idx, "".join(var.split("_"))] / 100
+        if var.startswith("lambda")
+        else data_params.loc[gen_hist_idx, var]
+    )
+    ax.axvline(
+        gen_val,
+        color="red",
+        linestyle="--",
+        linewidth=2,
+    )
+    xticks = ax.get_xticks()
+    ax.set_xticks(sorted(set(list(xticks) + [gen_val])))
+    ax.tick_params(axis="x", labelsize=8)
+    ax.tick_params(axis="y", labelsize=8)
+axd["lambda_21"].legend(bbox_to_anchor=(1.0, 1.00))
+fig.suptitle(f"Densities for generated dataset  #{gen_hist_idx}")
+# fig.tight_layout()
+"""
+fig.subplots_adjust(
+    hspace=0.4,  # vertical spacing between rows
+    wspace=4.5,  # horizontal spacing between columns
+    left=0.05,
+    right=0.95,
+    top=0.52,
+    bottom=0.08,  # margins
+)
+"""
+fig.show()
+fig.savefig(proc_output.get_temp_dir(RUN_NAME) / f"densities.{gen_hist_idx}.pdf")
+```
+<!--```{python}
+
+gen_hist_idx = 1
+data = df_sns.loc[(0, gen_hist_idx)]
+
+gs_kw = dict(width_ratios=[1] * 6, height_ratios=[1] * 3)
+fig = plt.figure(figsize=(12, 10))
+gs = GridSpec(
+    nrows=3,
+    ncols=6,
+    height_ratios=[1, 1, 1],
+    width_ratios=[1] * 6,
+    hspace=0.3,
+    wspace=0.5,
+)
+axd = {
+    "mu": fig.add_subplot(gs[0, 0:3]),
+    "beta": fig.add_subplot(gs[0, 3:]),
+    "lambda_01": fig.add_subplot(gs[1, 0:2]),
+    "lambda_10": fig.add_subplot(gs[1, 2:4]),
+    "lambda_12": fig.add_subplot(gs[2, 0:2]),
+    "lambda_21": fig.add_subplot(gs[2, 2:4]),
+}
+"""
+fig, axd = plt.subplot_mosaic(
+    [
+        ["mu"] * 3 + ["beta"] * 3,
+        ["lambda_01"] * 2 + ["lambda_10"] * 2 + ["."] * 2,
+        ["lambda_12"] * 2 + ["lambda_21"] * 2 + ["."] * 2,
+    ],
+    figsize=(12, 12),
+    gridspec_kw=gs_kw,
+    layout="constrained",
+)
+"""
+# flat_axs = axs.flatten()
+vars = ["mu", "beta", "lambda_01", "lambda_10", "lambda_12", "lambda_21"]
+vars_to_tex = {
+    "mu": r"$\mu$",
+    "beta": r"$\beta$",
+    "lambda_01": r"$\lambda_{01}$",
+    "lambda_10": r"$\lambda_{10}$",
+    "lambda_12": r"$\lambda_{12}$",
+    "lambda_21": r"$\lambda_{21}$",
+}
+for i, (k, row) in enumerate(data.iterrows()):
+    fp = row["file_type"]
+    row_data = row["pooled"].posterior.to_dataframe()
+    label = (
+        f"RevBayes"
+        if fp == "rb"
+        else f"TreePPL:\n {row["model_dir"]}, {row["model_name"]}"
+    )
+    m_key = (fp, row["model_dir"], row["model_name"])
+    color = hierarchical_palette[m_key]
+    style = h_style[m_key]
+    for var in vars:
+        ax = axd[var]
+        sns.kdeplot(
+            data=row_data,
+            x=var,
+            color=color,
+            ax=ax,
+            label=label,
+            legend=False,
+            alpha=1.0,
+            **style,
+        )
+        # Fill
+        sns.kdeplot(
+            data=row_data,
+            x=var,
+            color=color,
+            ax=ax,
+            legend=False,
+            alpha=0.1,
+            linewidth=0,
+            fill=True,
+        )
+
+for var in vars:
+    ax = axd[var]
+    ax.set_xlabel(vars_to_tex[var], fontsize=12)
+    ax.set_ylabel("")
+    if var.startswith("lambda"):
+        ax.set_xlim([0.0, 1.0])
+    else:
+        ax.set_xlim(left=0.0)
+    gen_val = (
+        data_params.loc[gen_hist_idx, "".join(var.split("_"))] / 100
+        if var.startswith("lambda")
+        else data_params.loc[gen_hist_idx, var]
+    )
+    ax.axvline(
+        gen_val,
+        color="red",
+        linestyle="--",
+        linewidth=2,
+    )
+    xticks = ax.get_xticks()
+    ax.set_xticks(sorted(set(list(xticks) + [gen_val])))
+    ax.tick_params(axis="x", labelsize=8)
+    ax.tick_params(axis="y", labelsize=8)
+axd["lambda_21"].legend(bbox_to_anchor=(1.0, 1.00))
+fig.suptitle(f"Densities for generated dataset  #{gen_hist_idx}")
+# fig.tight_layout()
+"""
+fig.subplots_adjust(
+    hspace=0.4,  # vertical spacing between rows
+    wspace=4.5,  # horizontal spacing between columns
+    left=0.05,
+    right=0.95,
+    top=0.52,
+    bottom=0.08,  # margins
+)
+"""
+fig.show()
+fig.savefig(proc_output.get_temp_dir(RUN_NAME) / f"densities.{gen_hist_idx}.pdf")
+```
+
+```{python}
+
+gen_hist_idx = 2
+data = df_sns.loc[(0, gen_hist_idx)]
+
+gs_kw = dict(width_ratios=[1] * 6, height_ratios=[1] * 3)
+fig = plt.figure(figsize=(12, 10))
+gs = GridSpec(
+    nrows=3,
+    ncols=6,
+    height_ratios=[1, 1, 1],
+    width_ratios=[1] * 6,
+    hspace=0.3,
+    wspace=0.5,
+)
+axd = {
+    "mu": fig.add_subplot(gs[0, 0:3]),
+    "beta": fig.add_subplot(gs[0, 3:]),
+    "lambda_01": fig.add_subplot(gs[1, 0:2]),
+    "lambda_10": fig.add_subplot(gs[1, 2:4]),
+    "lambda_12": fig.add_subplot(gs[2, 0:2]),
+    "lambda_21": fig.add_subplot(gs[2, 2:4]),
+}
+"""
+fig, axd = plt.subplot_mosaic(
+    [
+        ["mu"] * 3 + ["beta"] * 3,
+        ["lambda_01"] * 2 + ["lambda_10"] * 2 + ["."] * 2,
+        ["lambda_12"] * 2 + ["lambda_21"] * 2 + ["."] * 2,
+    ],
+    figsize=(12, 12),
+    gridspec_kw=gs_kw,
+    layout="constrained",
+)
+"""
+# flat_axs = axs.flatten()
+vars = ["mu", "beta", "lambda_01", "lambda_10", "lambda_12", "lambda_21"]
+vars_to_tex = {
+    "mu": r"$\mu$",
+    "beta": r"$\beta$",
+    "lambda_01": r"$\lambda_{01}$",
+    "lambda_10": r"$\lambda_{10}$",
+    "lambda_12": r"$\lambda_{12}$",
+    "lambda_21": r"$\lambda_{21}$",
+}
+for i, (k, row) in enumerate(data.iterrows()):
+    fp = row["file_type"]
+    row_data = row["pooled"].posterior.to_dataframe()
+    label = (
+        f"RevBayes"
+        if fp == "rb"
+        else f"TreePPL:\n {row["model_dir"]}, {row["model_name"]}"
+    )
+    m_key = (fp, row["model_dir"], row["model_name"])
+    color = hierarchical_palette[m_key]
+    style = h_style[m_key]
+    for var in vars:
+        ax = axd[var]
+        sns.kdeplot(
+            data=row_data,
+            x=var,
+            color=color,
+            ax=ax,
+            label=label,
+            legend=False,
+            alpha=1.0,
+            **style,
+        )
+        # Fill
+        sns.kdeplot(
+            data=row_data,
+            x=var,
+            color=color,
+            ax=ax,
+            legend=False,
+            alpha=0.1,
+            linewidth=0,
+            fill=True,
+        )
+
+for var in vars:
+    ax = axd[var]
+    ax.set_xlabel(vars_to_tex[var], fontsize=12)
+    ax.set_ylabel("")
+    if var.startswith("lambda"):
+        ax.set_xlim([0.0, 1.0])
+    else:
+        ax.set_xlim(left=0.0)
+    gen_val = (
+        data_params.loc[gen_hist_idx, "".join(var.split("_"))] / 100
+        if var.startswith("lambda")
+        else data_params.loc[gen_hist_idx, var]
+    )
+    ax.axvline(
+        gen_val,
+        color="red",
+        linestyle="--",
+        linewidth=2,
+    )
+    xticks = ax.get_xticks()
+    ax.set_xticks(sorted(set(list(xticks) + [gen_val])))
+    ax.tick_params(axis="x", labelsize=8)
+    ax.tick_params(axis="y", labelsize=8)
+axd["lambda_21"].legend(bbox_to_anchor=(1.0, 1.00))
+fig.suptitle(f"Densities for generated dataset  #{gen_hist_idx}")
+# fig.tight_layout()
+"""
+fig.subplots_adjust(
+    hspace=0.4,  # vertical spacing between rows
+    wspace=4.5,  # horizontal spacing between columns
+    left=0.05,
+    right=0.95,
+    top=0.52,
+    bottom=0.08,  # margins
+)
+"""
+fig.show()
+fig.savefig(proc_output.get_temp_dir(RUN_NAME) / f"densities.{gen_hist_idx}.pdf")
+``` -->
