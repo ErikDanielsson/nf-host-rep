@@ -69,7 +69,8 @@ workflow {
     params_config_ch.collectFile(
         name: "param_id_to_configuration.csv",
         storeDir: file(params.datadir),
-        newLine: true
+        newLine: true,
+        sort: true
     ) {pid, mu, beta, l0, l1, l2, l3, s -> "$pid\t$mu\t$beta\t$l0\t$l1\t$l2\t$l3\t$s"}
 
 
@@ -90,7 +91,8 @@ workflow {
         empirical_trees_ch.collectFile(
             name: "empirical_trees.csv",
             storeDir: file(params.datadir),
-            newLine: true
+            newLine: true,
+            sort: true
         ) {tid, s, h -> "$tid\t$s\t$h"}
         host_tree_ch = empirical_trees_ch.map { tid, hpath, spath -> [tid, hpath]}
         symbiont_tree_ch = empirical_trees_ch.map { tid, hpath, spath -> [tid, spath]}
@@ -259,7 +261,8 @@ workflow {
         compile_config_ch.collectFile(
             name: "compile_id_to_configuration.csv",
             storeDir: file(params.bindir),
-            newLine: true
+            newLine: true,
+            sort: true
         ) {cid, rid, md, mn, flags -> "$cid\t$rid\t$md\t$mn\t${flags}"}
 
         // Create all binaries we require
