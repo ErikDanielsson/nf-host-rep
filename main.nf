@@ -87,6 +87,11 @@ workflow {
             }
             .filter {it != null}
             .map {s, h -> [tree_id++, s, h]}
+        empirical_trees_ch.collectFile(
+            name: "empirical_trees.csv",
+            storeDir: file(params.datadir),
+            newLine: true
+        ) {tid, s, h -> "$tid\t$s\t$h"}
         host_tree_ch = empirical_trees_ch.map { tid, hpath, spath -> [tid, hpath]}
         symbiont_tree_ch = empirical_trees_ch.map { tid, hpath, spath -> [tid, spath]}
         genid = empirical_trees_ch.map { tid, hpath, spath -> tid }
