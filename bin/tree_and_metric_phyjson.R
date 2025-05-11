@@ -14,6 +14,13 @@ interaction_params_path <- args[4]
 
 symbiont_tree <- read_tree_from_revbayes(symbiont_tree_fn)
 host_tree <- read.tree(host_tree_fn)
+print(symbiont_tree)
+
+# Read the single line
+symbiont_tree_str <- readLines(symbiont_tree_fn, warn = FALSE)
+subroot_branch_length <- as.numeric(sub(".*:([0-9.]+);\\s*$", "\\1", symbiont_tree_str))
+
+print(subroot_branch_length)
 
 ntips <- Ntip(symbiont_tree)
 nhosts <- Ntip(host_tree)
@@ -32,4 +39,5 @@ json_obj$nhosts <- nhosts
 json_obj$host_distances <- c(t(host_distances))
 json_obj$dMean <- meanDistance
 json_obj$tune <- tune
+json_obj$subrootLength <- subroot_branch_length
 write_json(json_obj, phyjson_path, pretty = TRUE, auto_unbox = TRUE)

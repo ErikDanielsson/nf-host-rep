@@ -1,0 +1,3 @@
+Nymphalis tree taken from paper with subroot of length 0.0000001 added. 
+RevBayes should be forced to use this subroot, so it should behave equivalently to running the model with no subroot.
+The TreePPL models with and without subroot should be comparable.

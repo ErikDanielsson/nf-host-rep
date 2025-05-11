@@ -1,0 +1,2 @@
+Nymphalis tree from Braga et al. with subroot the height of the tree added.
+The treePPL implementation with no subroot should deviate from the RevBayes implementation but the one with subroot should be equivalent.

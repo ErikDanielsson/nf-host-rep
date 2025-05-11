@@ -45,4 +45,5 @@ json_obj$interactions <- c(t(interactions))
 json_obj$host_distances <- c(t(host_distances))
 json_obj$dMean <- dMean
 json_obj$tune <- tune
+json_obj$subrootLength <- 10
 write_json(json_obj, phyjson_path, pretty = TRUE, auto_unbox = TRUE)

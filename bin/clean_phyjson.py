@@ -41,6 +41,8 @@ def mod_tune_dMean(json_obj):
     """
     json_obj["tune"] = float(json_obj["tune"])
     json_obj["dMean"] = float(json_obj["dMean"])
+    if "subrootLength" in json_obj:
+        json_obj["subrootLength"] = float(json_obj["subrootLength"])
 
 
 # Read the input and output filenames
