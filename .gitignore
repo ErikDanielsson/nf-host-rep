@@ -189,4 +189,5 @@ null/
 *.gen.qmd
 *.gen.html
 *.gen_files
+*.quarto_ipynb
 quarto_tempdirs/

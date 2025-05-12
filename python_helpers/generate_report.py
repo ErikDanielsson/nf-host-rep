@@ -258,9 +258,9 @@ group_df_ess = df_ess.groupby(groupby_data)
 tppl_tree_plots_cell_template = """
 df_trees = proc_output.get_trees(df_fn)
 tree_plot_paths = []
-for row in df_trees:
+for _, row in df_trees.iterrows():
     tree_plot_path = proc_output.create_graphviz_tree_plot(
-        row["trees"], f"{row[genid]}.{row[param_id]}", RUN_NAME
+        row["trees"], f"{row.genid}.{row.param_id}.{row.compile_id}", RUN_NAME
     )
     tree_plot_paths.append(tree_plot_path)
 """
@@ -674,7 +674,7 @@ def generate_report(
             fh.write(
                 create_multi_fig(
                     "tree_plots",
-                    zip(tree_plot_paths, tree_plot_paths),
+                    [(fn, str(k)) for k, fn in tree_plot_paths.items()],
                 )
             )
         """
@@ -727,8 +727,7 @@ def main():
     )
     parser.add_argument(
         "--tppl-tree",
-        type=bool,
-        default=False,
+        action="store_true",
         help="Generate tree plots for TreePPL output",
     )
     parser.add_argument(

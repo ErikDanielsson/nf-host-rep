@@ -15,8 +15,9 @@ process compile_interactions_tppl {
         tuple val(param_id), path("sim.${param_id}.out"), emit: sim_bin
     
     script: 
+    def script = "simulate.tppl"
     """
-    tpplc $baseDir/bin/simulate.tppl \
+    tpplc $baseDir/bin/$script \
         --output sim.${param_id}.out \
         --particles 0 \
         --seed ${seed} \
