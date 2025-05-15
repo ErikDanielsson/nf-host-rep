@@ -1,0 +1,4000 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.40">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>TreePPL host repertoire</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script><script src="test_report_not_gen_files/libs/clipboard/clipboard.min.js"></script>
+<script src="test_report_not_gen_files/libs/quarto-html/quarto.js"></script>
+<script src="test_report_not_gen_files/libs/quarto-html/popper.min.js"></script>
+<script src="test_report_not_gen_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="test_report_not_gen_files/libs/quarto-html/anchor.min.js"></script>
+<link href="test_report_not_gen_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="test_report_not_gen_files/libs/quarto-html/quarto-syntax-highlighting-549806ee2085284f45b00abea8c6df48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="test_report_not_gen_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="test_report_not_gen_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="test_report_not_gen_files/libs/bootstrap/bootstrap-bc340e651bc5e6ec0d59d8f813f08a40.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="../test_report_not_gen.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">TreePPL host repertoire</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div id="32578ed9" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Add the python helper directory to the path</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> shutil</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> functools <span class="im">import</span> <span class="bu">reduce</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>CWD <span class="op">=</span> Path(os.getcwd())</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>sys.path.append(<span class="bu">str</span>(CWD <span class="op">/</span> <span class="st">"../python_helpers/"</span>))</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Import the python helpers</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> proc_output</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> parse_trace <span class="im">import</span> parse_trace</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> arviz <span class="im">as</span> az</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> xarray <span class="im">as</span> xr</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib.gridspec <span class="im">import</span> GridSpec</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> warnings</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> seaborn <span class="im">as</span> sns</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Suppress warning from arviz</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="co"># -- it complains that all samples are the same</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>warnings.filterwarnings(action<span class="op">=</span><span class="st">"ignore"</span>, module<span class="op">=</span><span class="vs">r"arviz"</span>)</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="co"># Set global script options, the rest will follow from these</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>RUN_NAME <span class="op">=</span> <span class="st">"final-tppl-comp"</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>CACHE <span class="op">=</span> <span class="va">True</span>  <span class="co"># Create a cache of the files to speed up next render?</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>CLEAR_CACHE <span class="op">=</span> <span class="va">False</span>  <span class="co"># Clear the cache from a previous render?</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="co"># Check if we should clear the cache</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">not</span> CACHE <span class="kw">or</span> CLEAR_CACHE:</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>    proc_output.clear_temp_dir(tempdir_suffix<span class="op">=</span>RUN_NAME)</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a><span class="co"># Set the names of the output directories</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>glob_outdir <span class="op">=</span> CWD <span class="op">/</span> <span class="st">".."</span> <span class="op">/</span> <span class="st">"simulations"</span></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>outdir <span class="op">=</span> glob_outdir <span class="op">/</span> RUN_NAME</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>datadir <span class="op">=</span> outdir <span class="op">/</span> <span class="st">"data"</span></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>simdir <span class="op">=</span> outdir <span class="op">/</span> <span class="st">"sims"</span></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>bindir <span class="op">=</span> outdir <span class="op">/</span> <span class="st">"bins"</span></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>trace <span class="op">=</span> outdir <span class="op">/</span> <span class="st">"final-tppl-comp.trace.txt"</span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>compile_params_path <span class="op">=</span> bindir <span class="op">/</span> <span class="st">"compile_id_to_configuration.csv"</span></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>data_params_path <span class="op">=</span> datadir <span class="op">/</span> <span class="st">"param_id_to_configuration.csv"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div id="f00741aa" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Read files</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> proc_output.get_files_in_dir(</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    simdir,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    {</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">"tppl"</span>: proc_output.get_tppl_output_pattern(),</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>        <span class="st">"rb"</span>: proc_output.get_rb_output_pattern(),</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>df_fn <span class="op">=</span> df.copy()</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> proc_output.create_inference_data_df(</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    df,</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    {</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>        <span class="st">"tppl"</span>: <span class="kw">lambda</span> fn: proc_output.read_tppl_incremental_file(</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>            fn, with_file<span class="op">=</span>CACHE, tempdir_suffix<span class="op">=</span>RUN_NAME</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>        ),</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>        <span class="st">"rb"</span>: <span class="kw">lambda</span> fn: proc_output.read_rb_file(</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>            fn, with_file<span class="op">=</span>CACHE, tempdir_suffix<span class="op">=</span>RUN_NAME</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>        ),</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1000</span>,</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1</span>,</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>    end<span class="op">=</span><span class="dv">9000</span>,</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>dfs <span class="op">=</span> {k: v <span class="cf">for</span> k, v <span class="kw">in</span> df.groupby(<span class="st">"file_type"</span>)}</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>has_rb <span class="op">=</span> <span class="st">"rb"</span> <span class="kw">in</span> dfs</span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>has_tppl <span class="op">=</span> <span class="st">"tppl"</span> <span class="kw">in</span> dfs</span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> has_rb:</span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>    df_rb <span class="op">=</span> dfs[<span class="st">"rb"</span>]</span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> has_tppl:</span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>    df_tppl <span class="op">=</span> dfs[<span class="st">"tppl"</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>rb.0.2.2. 8000
+rb.0.1.3. 8000
+rb.0.3.1. 8000
+rb.0.2.1. 8000
+rb.0.2.3. 8000
+rb.0.0.2. 8000
+rb.0.0.1. 8000
+rb.0.3.3. 8000
+rb.0.0.3. 8000
+rb.0.3.2. 8000
+rb.0.1.2. 8000
+rb.0.1.1. 8000
+tppl.0.2.7. 8000
+tppl.0.1.9. 8000
+tppl.0.0.6. 8000
+tppl.0.2.6. 8000
+tppl.0.3.9. 8000
+tppl.0.0.5. 8000
+tppl.0.2.9. 8000
+tppl.0.1.10. 8000
+tppl.0.0.7. 8000
+tppl.0.0.8. 8000
+tppl.0.1.2. 8000
+tppl.0.2.10. 8000
+tppl.0.0.0. 8000
+tppl.0.3.5. 8000
+tppl.0.0.9. 8000
+tppl.0.1.6. 8000
+tppl.0.2.3. 8000
+tppl.0.2.8. 8000
+tppl.0.1.7. 8000
+tppl.0.3.6. 8000
+tppl.0.2.5. 8000
+tppl.0.3.3. 8000
+tppl.0.2.4. 8000
+tppl.0.1.5. 8000
+tppl.0.0.11. 8000
+tppl.0.1.1. 8000
+tppl.0.3.7. 8000
+tppl.0.3.8. 8000
+tppl.0.3.2. 8000
+tppl.0.0.10. 8000
+tppl.0.3.1. 8000
+tppl.0.1.3. 8000
+tppl.0.3.10. 8000
+tppl.0.3.11. 8000
+tppl.0.2.11. 8000
+tppl.0.3.0. 8000
+tppl.0.0.1. 8000
+tppl.0.1.8. 8000
+tppl.0.3.4. 8000
+tppl.0.1.4. 8000
+tppl.0.2.2. 8000
+tppl.0.2.0. 8000
+tppl.0.1.11. 8000
+tppl.0.0.2. 8000
+tppl.0.2.1. 8000
+tppl.0.1.0. 8000</code></pre>
+</div>
+</div>
+<p>The models were run on dataset generated with the following parameters</p>
+<div id="701d1ab9" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>data_params <span class="op">=</span> proc_output.parse_data_params(data_params_path)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>data_params <span class="op">=</span> data_params.sort_values(by<span class="op">=</span><span class="st">"param_id"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>/home/ed/LU/kandidat/nf-host-rep/final_reports/../python_helpers/proc_output.py:106: ParserWarning: Length of header or names does not match length of data. This leads to a loss of data with index_col=False.
+  df = pd.read_csv(</code></pre>
+</div>
+</div>
+<section id="treeppl-compile-params" class="level3">
+<h3 class="anchored" data-anchor-id="treeppl-compile-params">TreePPL compile params</h3>
+<p>The following TreePPL models were compiled</p>
+<div id="02afa17b" class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>compile_params <span class="op">=</span> proc_output.parse_compile_params(compile_params_path)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>compile_params</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="38">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">compile_id</th>
+<th data-quarto-table-cell-role="th">runid</th>
+<th data-quarto-table-cell-role="th">model_dir</th>
+<th data-quarto-table-cell-role="th">model_name</th>
+<th data-quarto-table-cell-role="th">m</th>
+<th data-quarto-table-cell-role="th">align</th>
+<th data-quarto-table-cell-role="th">cps</th>
+<th data-quarto-table-cell-role="th">kernel</th>
+<th data-quarto-table-cell-role="th">incremental-printing</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>0</td>
+<td>1</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>1</td>
+<td>2</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>10</td>
+<td>2</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>11</td>
+<td>3</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>2</td>
+<td>3</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">5</td>
+<td>3</td>
+<td>1</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">6</td>
+<td>4</td>
+<td>2</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">7</td>
+<td>5</td>
+<td>3</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">8</td>
+<td>6</td>
+<td>1</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">9</td>
+<td>7</td>
+<td>2</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">10</td>
+<td>8</td>
+<td>3</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">11</td>
+<td>9</td>
+<td>1</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</section>
+<section id="nextflow-trace" class="level3">
+<h3 class="anchored" data-anchor-id="nextflow-trace">Nextflow trace</h3>
+<p>The trace file contains status and process time</p>
+<div id="8a2839a0" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>trace_df <span class="op">=</span> parse_trace(trace)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div id="486c9a56" class="cell" data-execution_count="6">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>df_tppl_with_compile_params <span class="op">=</span> proc_output.add_compile_params(df_tppl, compile_params)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.concat([df_rb, df_tppl_with_compile_params])</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>fillna_cols <span class="op">=</span> [<span class="st">"model_name"</span>, <span class="st">"model_dir"</span>]</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>df[fillna_cols] <span class="op">=</span> df[fillna_cols].fillna(<span class="st">"rb"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div id="cf5b56f0" class="cell" data-execution_count="7">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>timed_df <span class="op">=</span> pd.merge(</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    left<span class="op">=</span>trace_df,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    right<span class="op">=</span>df,</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    how<span class="op">=</span><span class="st">"left"</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    left_on<span class="op">=</span>[<span class="st">"genid"</span>, <span class="st">"param_id"</span>, <span class="st">"compile_id"</span>, <span class="st">"file_type"</span>],</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    right_on<span class="op">=</span>[<span class="st">"genid"</span>, <span class="st">"param_id"</span>, <span class="st">"compile_id"</span>, <span class="st">"file_type"</span>],</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>timed_df.sort_values(by<span class="op">=</span>[<span class="st">"genid"</span>, <span class="st">"param_id"</span>, <span class="st">"parsed_time"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="41">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">genid</th>
+<th data-quarto-table-cell-role="th">param_id</th>
+<th data-quarto-table-cell-role="th">file_type</th>
+<th data-quarto-table-cell-role="th">compile_id</th>
+<th data-quarto-table-cell-role="th">status</th>
+<th data-quarto-table-cell-role="th">parsed_time</th>
+<th data-quarto-table-cell-role="th">%cpu</th>
+<th data-quarto-table-cell-role="th">filename</th>
+<th data-quarto-table-cell-role="th">inference_data</th>
+<th data-quarto-table-cell-role="th">runid</th>
+<th data-quarto-table-cell-role="th">model_dir</th>
+<th data-quarto-table-cell-role="th">model_name</th>
+<th data-quarto-table-cell-role="th">m</th>
+<th data-quarto-table-cell-role="th">align</th>
+<th data-quarto-table-cell-role="th">cps</th>
+<th data-quarto-table-cell-role="th">kernel</th>
+<th data-quarto-table-cell-role="th">incremental-printing</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>0</td>
+<td>0</td>
+<td>rb</td>
+<td>2</td>
+<td>COMPLETED</td>
+<td>522.0</td>
+<td>75.4%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>NaN</td>
+<td>rb</td>
+<td>rb</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">5</td>
+<td>0</td>
+<td>0</td>
+<td>rb</td>
+<td>3</td>
+<td>COMPLETED</td>
+<td>558.0</td>
+<td>76.1%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>NaN</td>
+<td>rb</td>
+<td>rb</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">9</td>
+<td>0</td>
+<td>0</td>
+<td>rb</td>
+<td>1</td>
+<td>COMPLETED</td>
+<td>629.0</td>
+<td>74.5%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>NaN</td>
+<td>rb</td>
+<td>rb</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">23</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>8</td>
+<td>COMPLETED</td>
+<td>2074.0</td>
+<td>167.0%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>3.0</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">44</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>6</td>
+<td>COMPLETED</td>
+<td>2205.0</td>
+<td>162.0%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>1.0</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">38</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>7</td>
+<td>COMPLETED</td>
+<td>2235.0</td>
+<td>160.2%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>2.0</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">21</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>2</td>
+<td>COMPLETED</td>
+<td>2284.0</td>
+<td>164.6%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>3.0</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">22</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>0</td>
+<td>COMPLETED</td>
+<td>2364.0</td>
+<td>162.0%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>1.0</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">20</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>1</td>
+<td>COMPLETED</td>
+<td>3535.0</td>
+<td>152.7%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>2.0</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">57</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>10</td>
+<td>COMPLETED</td>
+<td>5195.0</td>
+<td>271.3%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>2.0</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">37</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>9</td>
+<td>COMPLETED</td>
+<td>12465.0</td>
+<td>160.2%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>1.0</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">52</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>5</td>
+<td>COMPLETED</td>
+<td>12874.0</td>
+<td>162.7%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>3.0</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">39</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>11</td>
+<td>COMPLETED</td>
+<td>13730.0</td>
+<td>159.8%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>3.0</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">58</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>3</td>
+<td>ABORTED</td>
+<td>NaN</td>
+<td>-</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">59</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>4</td>
+<td>ABORTED</td>
+<td>NaN</td>
+<td>-</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">0</td>
+<td>0</td>
+<td>1</td>
+<td>rb</td>
+<td>3</td>
+<td>COMPLETED</td>
+<td>514.0</td>
+<td>76.7%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>NaN</td>
+<td>rb</td>
+<td>rb</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">3</td>
+<td>0</td>
+<td>1</td>
+<td>rb</td>
+<td>1</td>
+<td>COMPLETED</td>
+<td>558.0</td>
+<td>75.3%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>NaN</td>
+<td>rb</td>
+<td>rb</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">6</td>
+<td>0</td>
+<td>1</td>
+<td>rb</td>
+<td>2</td>
+<td>COMPLETED</td>
+<td>618.0</td>
+<td>73.5%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>NaN</td>
+<td>rb</td>
+<td>rb</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">19</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>8</td>
+<td>COMPLETED</td>
+<td>2504.0</td>
+<td>160.8%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>3.0</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">43</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>6</td>
+<td>COMPLETED</td>
+<td>2522.0</td>
+<td>162.7%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>1.0</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">36</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>7</td>
+<td>COMPLETED</td>
+<td>2532.0</td>
+<td>161.0%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>2.0</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">17</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>0</td>
+<td>COMPLETED</td>
+<td>2694.0</td>
+<td>159.7%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>1.0</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">14</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>2</td>
+<td>COMPLETED</td>
+<td>2725.0</td>
+<td>164.1%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>3.0</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">15</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>1</td>
+<td>COMPLETED</td>
+<td>2773.0</td>
+<td>159.2%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>2.0</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">56</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>10</td>
+<td>COMPLETED</td>
+<td>6642.0</td>
+<td>234.9%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>2.0</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">51</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>4</td>
+<td>COMPLETED</td>
+<td>11488.0</td>
+<td>162.9%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>2.0</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">49</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>5</td>
+<td>COMPLETED</td>
+<td>11929.0</td>
+<td>160.6%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>3.0</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">29</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>11</td>
+<td>COMPLETED</td>
+<td>11950.0</td>
+<td>160.0%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>3.0</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">27</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>9</td>
+<td>COMPLETED</td>
+<td>12194.0</td>
+<td>157.0%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>1.0</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">30</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>3</td>
+<td>COMPLETED</td>
+<td>12657.0</td>
+<td>157.5%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>1.0</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">7</td>
+<td>0</td>
+<td>2</td>
+<td>rb</td>
+<td>2</td>
+<td>COMPLETED</td>
+<td>575.0</td>
+<td>74.0%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>NaN</td>
+<td>rb</td>
+<td>rb</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">10</td>
+<td>0</td>
+<td>2</td>
+<td>rb</td>
+<td>3</td>
+<td>COMPLETED</td>
+<td>593.0</td>
+<td>73.5%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>NaN</td>
+<td>rb</td>
+<td>rb</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">11</td>
+<td>0</td>
+<td>2</td>
+<td>rb</td>
+<td>1</td>
+<td>COMPLETED</td>
+<td>619.0</td>
+<td>74.6%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>NaN</td>
+<td>rb</td>
+<td>rb</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">46</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>6</td>
+<td>COMPLETED</td>
+<td>2329.0</td>
+<td>162.3%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>1.0</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">32</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>8</td>
+<td>COMPLETED</td>
+<td>2403.0</td>
+<td>163.3%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>3.0</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">35</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>7</td>
+<td>COMPLETED</td>
+<td>2434.0</td>
+<td>160.8%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>2.0</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">24</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>1</td>
+<td>COMPLETED</td>
+<td>2457.0</td>
+<td>163.1%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>2.0</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">34</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>0</td>
+<td>COMPLETED</td>
+<td>2511.0</td>
+<td>162.1%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>1.0</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">31</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>2</td>
+<td>COMPLETED</td>
+<td>2548.0</td>
+<td>160.6%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>3.0</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">55</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>10</td>
+<td>COMPLETED</td>
+<td>7016.0</td>
+<td>229.0%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>2.0</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">53</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>4</td>
+<td>COMPLETED</td>
+<td>11719.0</td>
+<td>162.9%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>2.0</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">45</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>9</td>
+<td>COMPLETED</td>
+<td>12099.0</td>
+<td>160.6%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>1.0</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">41</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>11</td>
+<td>COMPLETED</td>
+<td>12156.0</td>
+<td>160.2%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>3.0</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">47</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>5</td>
+<td>COMPLETED</td>
+<td>12318.0</td>
+<td>159.2%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>3.0</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">40</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>3</td>
+<td>COMPLETED</td>
+<td>12353.0</td>
+<td>158.1%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>1.0</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>0</td>
+<td>3</td>
+<td>rb</td>
+<td>3</td>
+<td>COMPLETED</td>
+<td>541.0</td>
+<td>75.2%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>NaN</td>
+<td>rb</td>
+<td>rb</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>0</td>
+<td>3</td>
+<td>rb</td>
+<td>2</td>
+<td>COMPLETED</td>
+<td>556.0</td>
+<td>77.5%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>NaN</td>
+<td>rb</td>
+<td>rb</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">8</td>
+<td>0</td>
+<td>3</td>
+<td>rb</td>
+<td>1</td>
+<td>COMPLETED</td>
+<td>636.0</td>
+<td>75.3%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>NaN</td>
+<td>rb</td>
+<td>rb</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">42</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>6</td>
+<td>COMPLETED</td>
+<td>2226.0</td>
+<td>161.1%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>1.0</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">33</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>7</td>
+<td>COMPLETED</td>
+<td>2246.0</td>
+<td>161.6%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>2.0</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">18</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>8</td>
+<td>COMPLETED</td>
+<td>2321.0</td>
+<td>160.4%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>3.0</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">16</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>0</td>
+<td>COMPLETED</td>
+<td>2430.0</td>
+<td>160.9%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>1.0</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">12</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>2</td>
+<td>COMPLETED</td>
+<td>2501.0</td>
+<td>163.5%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>3.0</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">13</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>1</td>
+<td>COMPLETED</td>
+<td>2505.0</td>
+<td>163.0%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>2.0</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">54</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>10</td>
+<td>COMPLETED</td>
+<td>6415.0</td>
+<td>235.8%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>2.0</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">50</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>4</td>
+<td>COMPLETED</td>
+<td>11424.0</td>
+<td>161.9%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>2.0</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">25</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>9</td>
+<td>COMPLETED</td>
+<td>11546.0</td>
+<td>159.2%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>1.0</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">48</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>5</td>
+<td>COMPLETED</td>
+<td>11648.0</td>
+<td>158.7%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>3.0</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">26</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>11</td>
+<td>COMPLETED</td>
+<td>11686.0</td>
+<td>160.2%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>3.0</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">28</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>3</td>
+<td>COMPLETED</td>
+<td>11806.0</td>
+<td>158.8%</td>
+<td>/home/ed/LU/kandidat/nf-host-rep/final_reports...</td>
+<td>[posterior]</td>
+<td>1.0</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>mcmc-lightweight</td>
+<td>True</td>
+<td>partial</td>
+<td>True</td>
+<td>True</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<div id="533b9c5e" class="cell" data-execution_count="8">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> reduce_col(inference_col):</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> concat(x, y):</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>        t <span class="op">=</span> az.InferenceData(</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>            posterior<span class="op">=</span>xr.concat([x.posterior, y.posterior], dim<span class="op">=</span><span class="st">"group"</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> t</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">reduce</span>(concat, inference_col)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> concat_over_sliced_MI(</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    df_MI: pd.DataFrame,</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    aggr_dims<span class="op">=</span>[<span class="st">"genid"</span>, <span class="st">"param_id"</span>, <span class="st">"file_type"</span>, <span class="st">"model_dir"</span>, <span class="st">"model_name"</span>],</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    data_col<span class="op">=</span><span class="st">"inference_data"</span>,</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    time_col<span class="op">=</span><span class="st">"parsed_time"</span>,</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>):</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>    df_aggr <span class="op">=</span> df_MI.groupby(aggr_dims).agg(</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>        pooled<span class="op">=</span>pd.NamedAgg(column<span class="op">=</span>data_col, aggfunc<span class="op">=</span>reduce_col),</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>        time_mean<span class="op">=</span>pd.NamedAgg(column<span class="op">=</span>time_col, aggfunc<span class="op">=</span><span class="st">"mean"</span>),</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>        time_std<span class="op">=</span>pd.NamedAgg(column<span class="op">=</span>time_col, aggfunc<span class="op">=</span><span class="st">"std"</span>),</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> df_aggr</span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>new_df <span class="op">=</span> concat_over_sliced_MI(timed_df).reset_index()</span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>new_df</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="42">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">genid</th>
+<th data-quarto-table-cell-role="th">param_id</th>
+<th data-quarto-table-cell-role="th">file_type</th>
+<th data-quarto-table-cell-role="th">model_dir</th>
+<th data-quarto-table-cell-role="th">model_name</th>
+<th data-quarto-table-cell-role="th">pooled</th>
+<th data-quarto-table-cell-role="th">time_mean</th>
+<th data-quarto-table-cell-role="th">time_std</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>0</td>
+<td>0</td>
+<td>rb</td>
+<td>rb</td>
+<td>rb</td>
+<td>[posterior]</td>
+<td>569.666667</td>
+<td>54.445692</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>[posterior]</td>
+<td>2171.333333</td>
+<td>85.617366</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>[posterior]</td>
+<td>10463.333333</td>
+<td>4606.143542</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>[posterior]</td>
+<td>2727.666667</td>
+<td>700.314453</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>[posterior]</td>
+<td>12874.000000</td>
+<td>NaN</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">5</td>
+<td>0</td>
+<td>1</td>
+<td>rb</td>
+<td>rb</td>
+<td>rb</td>
+<td>[posterior]</td>
+<td>563.333333</td>
+<td>52.204725</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">6</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>[posterior]</td>
+<td>2519.333333</td>
+<td>14.189198</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">7</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>[posterior]</td>
+<td>10262.000000</td>
+<td>3137.384898</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">8</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>[posterior]</td>
+<td>2730.666667</td>
+<td>39.803685</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">9</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>[posterior]</td>
+<td>12024.666667</td>
+<td>590.342556</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">10</td>
+<td>0</td>
+<td>2</td>
+<td>rb</td>
+<td>rb</td>
+<td>rb</td>
+<td>[posterior]</td>
+<td>595.666667</td>
+<td>22.120880</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">11</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>[posterior]</td>
+<td>2388.666667</td>
+<td>53.947505</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">12</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>[posterior]</td>
+<td>10423.666667</td>
+<td>2951.263515</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">13</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>[posterior]</td>
+<td>2505.333333</td>
+<td>45.763887</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">14</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>[posterior]</td>
+<td>12130.000000</td>
+<td>356.366384</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">15</td>
+<td>0</td>
+<td>3</td>
+<td>rb</td>
+<td>rb</td>
+<td>rb</td>
+<td>[posterior]</td>
+<td>577.666667</td>
+<td>51.071845</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">16</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>[posterior]</td>
+<td>2264.333333</td>
+<td>50.083264</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">17</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>[posterior]</td>
+<td>9882.333333</td>
+<td>3003.614545</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">18</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>[posterior]</td>
+<td>2478.666667</td>
+<td>42.193996</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">19</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>[posterior]</td>
+<td>11626.000000</td>
+<td>191.947910</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</section>
+<section id="make-seaborn-plot" class="level2">
+<h2 class="anchored" data-anchor-id="make-seaborn-plot">Make seaborn plot</h2>
+<div id="27eaf724" class="cell" data-execution_count="9">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>df_sns <span class="op">=</span> new_df.set_index([<span class="st">"genid"</span>, <span class="st">"param_id"</span>]).sort_values(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    [<span class="st">"file_type"</span>, <span class="st">"model_dir"</span>, <span class="st">"model_name"</span>], ascending<span class="op">=</span><span class="va">False</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>base_colors <span class="op">=</span> sns.color_palette(<span class="st">"Set1"</span>, n_colors<span class="op">=</span><span class="dv">3</span>)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>cs_reject <span class="op">=</span> sns.light_palette(base_colors[<span class="dv">2</span>], n_colors<span class="op">=</span><span class="dv">10</span>, reverse<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>cs_unif <span class="op">=</span> sns.light_palette(base_colors[<span class="dv">1</span>], n_colors<span class="op">=</span><span class="dv">10</span>, reverse<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>c_rb <span class="op">=</span> <span class="st">"k"</span>  <span class="co"># , base_colors[2]</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>hierarchical_palette <span class="op">=</span> {</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"tppl"</span>, <span class="st">"independence"</span>, <span class="st">"reject-accept"</span>): cs_reject[<span class="dv">0</span>],</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"tppl"</span>, <span class="st">"rb-emul"</span>, <span class="st">"reject-accept"</span>): cs_reject[<span class="dv">4</span>],</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"tppl"</span>, <span class="st">"independence"</span>, <span class="st">"uniformization"</span>): cs_unif[<span class="dv">0</span>],</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"tppl"</span>, <span class="st">"rb-emul"</span>, <span class="st">"uniformization"</span>): cs_unif[<span class="dv">4</span>],</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"rb"</span>, <span class="st">"rb"</span>, <span class="st">"rb"</span>): c_rb,</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>h_style <span class="op">=</span> {</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"tppl"</span>, <span class="st">"independence"</span>, <span class="st">"reject-accept"</span>): {<span class="st">"linestyle"</span>: <span class="st">"--"</span>},</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"tppl"</span>, <span class="st">"independence"</span>, <span class="st">"uniformization"</span>): {<span class="st">"linestyle"</span>: <span class="st">":"</span>},</span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"tppl"</span>, <span class="st">"rb-emul"</span>, <span class="st">"reject-accept"</span>): {<span class="st">"linestyle"</span>: <span class="st">"--"</span>},</span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"tppl"</span>, <span class="st">"rb-emul"</span>, <span class="st">"uniformization"</span>): {<span class="st">"linestyle"</span>: <span class="st">":"</span>},</span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"rb"</span>, <span class="st">"rb"</span>, <span class="st">"rb"</span>): {},</span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a><span class="bu">vars</span> <span class="op">=</span> [<span class="st">"mu"</span>, <span class="st">"beta"</span>, <span class="st">"lambda_01"</span>, <span class="st">"lambda_10"</span>, <span class="st">"lambda_12"</span>, <span class="st">"lambda_21"</span>]</span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>vars_to_tex <span class="op">=</span> {</span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>    <span class="st">"mu"</span>: <span class="vs">r"$\mu$"</span>,</span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>    <span class="st">"beta"</span>: <span class="vs">r"$\beta$"</span>,</span>
+<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a>    <span class="st">"lambda_01"</span>: <span class="vs">r"$\lambda_</span><span class="sc">{01}</span><span class="vs">$"</span>,</span>
+<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a>    <span class="st">"lambda_10"</span>: <span class="vs">r"$\lambda_</span><span class="sc">{10}</span><span class="vs">$"</span>,</span>
+<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a>    <span class="st">"lambda_12"</span>: <span class="vs">r"$\lambda_</span><span class="sc">{12}</span><span class="vs">$"</span>,</span>
+<span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a>    <span class="st">"lambda_21"</span>: <span class="vs">r"$\lambda_</span><span class="sc">{21}</span><span class="vs">$"</span>,</span>
+<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-32"><a href="#cb11-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-33"><a href="#cb11-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-34"><a href="#cb11-34" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> gen_fig_axd():</span>
+<span id="cb11-35"><a href="#cb11-35" aria-hidden="true" tabindex="-1"></a>    gs_kw <span class="op">=</span> <span class="bu">dict</span>(width_ratios<span class="op">=</span>[<span class="dv">1</span>] <span class="op">*</span> <span class="dv">6</span>, height_ratios<span class="op">=</span>[<span class="dv">1</span>] <span class="op">*</span> <span class="dv">3</span>)</span>
+<span id="cb11-36"><a href="#cb11-36" aria-hidden="true" tabindex="-1"></a>    fig <span class="op">=</span> plt.figure(figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">10</span>))</span>
+<span id="cb11-37"><a href="#cb11-37" aria-hidden="true" tabindex="-1"></a>    gs <span class="op">=</span> GridSpec(</span>
+<span id="cb11-38"><a href="#cb11-38" aria-hidden="true" tabindex="-1"></a>        nrows<span class="op">=</span><span class="dv">3</span>,</span>
+<span id="cb11-39"><a href="#cb11-39" aria-hidden="true" tabindex="-1"></a>        ncols<span class="op">=</span><span class="dv">6</span>,</span>
+<span id="cb11-40"><a href="#cb11-40" aria-hidden="true" tabindex="-1"></a>        height_ratios<span class="op">=</span>[<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>],</span>
+<span id="cb11-41"><a href="#cb11-41" aria-hidden="true" tabindex="-1"></a>        width_ratios<span class="op">=</span>[<span class="dv">1</span>] <span class="op">*</span> <span class="dv">6</span>,</span>
+<span id="cb11-42"><a href="#cb11-42" aria-hidden="true" tabindex="-1"></a>        hspace<span class="op">=</span><span class="fl">0.3</span>,</span>
+<span id="cb11-43"><a href="#cb11-43" aria-hidden="true" tabindex="-1"></a>        wspace<span class="op">=</span><span class="fl">0.5</span>,</span>
+<span id="cb11-44"><a href="#cb11-44" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb11-45"><a href="#cb11-45" aria-hidden="true" tabindex="-1"></a>    axd <span class="op">=</span> {</span>
+<span id="cb11-46"><a href="#cb11-46" aria-hidden="true" tabindex="-1"></a>        <span class="st">"mu"</span>: fig.add_subplot(gs[<span class="dv">0</span>, <span class="dv">0</span>:<span class="dv">3</span>]),</span>
+<span id="cb11-47"><a href="#cb11-47" aria-hidden="true" tabindex="-1"></a>        <span class="st">"beta"</span>: fig.add_subplot(gs[<span class="dv">0</span>, <span class="dv">3</span>:]),</span>
+<span id="cb11-48"><a href="#cb11-48" aria-hidden="true" tabindex="-1"></a>        <span class="st">"lambda_01"</span>: fig.add_subplot(gs[<span class="dv">1</span>, <span class="dv">0</span>:<span class="dv">2</span>]),</span>
+<span id="cb11-49"><a href="#cb11-49" aria-hidden="true" tabindex="-1"></a>        <span class="st">"lambda_10"</span>: fig.add_subplot(gs[<span class="dv">1</span>, <span class="dv">2</span>:<span class="dv">4</span>]),</span>
+<span id="cb11-50"><a href="#cb11-50" aria-hidden="true" tabindex="-1"></a>        <span class="st">"lambda_12"</span>: fig.add_subplot(gs[<span class="dv">2</span>, <span class="dv">0</span>:<span class="dv">2</span>]),</span>
+<span id="cb11-51"><a href="#cb11-51" aria-hidden="true" tabindex="-1"></a>        <span class="st">"lambda_21"</span>: fig.add_subplot(gs[<span class="dv">2</span>, <span class="dv">2</span>:<span class="dv">4</span>]),</span>
+<span id="cb11-52"><a href="#cb11-52" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb11-53"><a href="#cb11-53" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> fig, axd</span>
+<span id="cb11-54"><a href="#cb11-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-55"><a href="#cb11-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-56"><a href="#cb11-56" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_label(fp, md, mn):</span>
+<span id="cb11-57"><a href="#cb11-57" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="ss">f"RevBayes"</span> <span class="cf">if</span> fp <span class="op">==</span> <span class="st">"rb"</span> <span class="cf">else</span> <span class="ss">f"TreePPL:</span><span class="ch">\n</span><span class="ss"> </span><span class="sc">{</span>md<span class="sc">}</span><span class="ss">, </span><span class="sc">{</span>mn<span class="sc">}</span><span class="ss">"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div id="94964bcc" class="cell" data-execution_count="10">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> conv_stats(df):</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> calc_ess(inf_data, method):</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>        chains <span class="op">=</span> az.InferenceData(</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>            posterior<span class="op">=</span>inf_data.posterior.rename({<span class="st">"group"</span>: <span class="st">"chain"</span>, <span class="st">"chain"</span>: <span class="st">"group"</span>})</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>        ess <span class="op">=</span> az.ess(chains, method<span class="op">=</span>method)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> ess.to_dataframe().squeeze()</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> calc_rhat(inf_data):</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>        chains <span class="op">=</span> az.InferenceData(</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>            posterior<span class="op">=</span>inf_data.posterior.rename({<span class="st">"group"</span>: <span class="st">"chain"</span>, <span class="st">"chain"</span>: <span class="st">"group"</span>})</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>        rhat <span class="op">=</span> az.rhat(chains)</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> rhat.to_dataframe().squeeze()</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>    stats <span class="op">=</span> [<span class="st">"ess"</span>, <span class="st">"ess_per_sample"</span>]</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>    stats <span class="op">=</span> [<span class="st">"ess"</span>]</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>    df_bulk_ps <span class="op">=</span> df[[<span class="st">"pooled"</span>, <span class="st">"time_mean"</span>]].<span class="bu">apply</span>(</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>        <span class="kw">lambda</span> r: calc_ess(r[<span class="st">"pooled"</span>], <span class="st">"bulk"</span>) <span class="op">/</span> r[<span class="st">"time_mean"</span>], axis<span class="op">=</span><span class="dv">1</span></span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>    df_tail_ps <span class="op">=</span> df[[<span class="st">"pooled"</span>, <span class="st">"time_mean"</span>]].<span class="bu">apply</span>(</span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>        <span class="kw">lambda</span> r: calc_ess(r[<span class="st">"pooled"</span>], <span class="st">"tail"</span>) <span class="op">/</span> r[<span class="st">"time_mean"</span>], axis<span class="op">=</span><span class="dv">1</span></span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>    df_rhat <span class="op">=</span> df[<span class="st">"pooled"</span>].<span class="bu">apply</span>(calc_rhat)</span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> df_bulk_ps, df_tail_ps, df_rhat</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div id="9a5dbd1f" class="cell" data-execution_count="11">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>df_bulk, df_tail, df_rhat <span class="op">=</span> conv_stats(</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    df_sns.reset_index().set_index(</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>        [<span class="st">"genid"</span>, <span class="st">"param_id"</span>, <span class="st">"file_type"</span>, <span class="st">"model_dir"</span>, <span class="st">"model_name"</span>]</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> show_df(df):</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    <span class="bu">vars</span> <span class="op">=</span> [<span class="st">"mu"</span>, <span class="st">"beta"</span>, <span class="st">"lambda_01"</span>, <span class="st">"lambda_10"</span>, <span class="st">"lambda_12"</span>, <span class="st">"lambda_21"</span>]</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    df[<span class="st">"min"</span>] <span class="op">=</span> df[<span class="bu">vars</span>].<span class="bu">min</span>(axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>    df[<span class="st">"max"</span>] <span class="op">=</span> df[<span class="bu">vars</span>].<span class="bu">max</span>(axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>    df[<span class="st">"median"</span>] <span class="op">=</span> df[<span class="bu">vars</span>].median(axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>    df[<span class="st">"mean"</span>] <span class="op">=</span> df[<span class="bu">vars</span>].mean(axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>    df <span class="op">=</span> df.drop(columns<span class="op">=</span><span class="bu">vars</span>)</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> df.reset_index().sort_values(</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>        by<span class="op">=</span>[<span class="st">"genid"</span>, <span class="st">"param_id"</span>, <span class="st">"file_type"</span>, <span class="st">"model_dir"</span>, <span class="st">"model_name"</span>]</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> show_non_conv_df(rhat_df, thresh<span class="op">=</span><span class="fl">1.01</span>):</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>    <span class="bu">vars</span> <span class="op">=</span> [<span class="st">"mu"</span>, <span class="st">"beta"</span>, <span class="st">"lambda_01"</span>, <span class="st">"lambda_10"</span>, <span class="st">"lambda_12"</span>, <span class="st">"lambda_21"</span>]</span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>    non_conv <span class="op">=</span> rhat_df[<span class="bu">vars</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> row: (row <span class="op">&gt;</span> thresh).<span class="bu">any</span>(), axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (</span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>        rhat_df[non_conv]</span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>        .reset_index()</span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>        .sort_values(by<span class="op">=</span>[<span class="st">"genid"</span>, <span class="st">"param_id"</span>, <span class="st">"file_type"</span>, <span class="st">"model_dir"</span>, <span class="st">"model_name"</span>])</span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a>show_df(df_bulk)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="45">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">genid</th>
+<th data-quarto-table-cell-role="th">param_id</th>
+<th data-quarto-table-cell-role="th">file_type</th>
+<th data-quarto-table-cell-role="th">model_dir</th>
+<th data-quarto-table-cell-role="th">model_name</th>
+<th data-quarto-table-cell-role="th">min</th>
+<th data-quarto-table-cell-role="th">max</th>
+<th data-quarto-table-cell-role="th">median</th>
+<th data-quarto-table-cell-role="th">mean</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">16</td>
+<td>0</td>
+<td>0</td>
+<td>rb</td>
+<td>rb</td>
+<td>rb</td>
+<td>0.152756</td>
+<td>15.644658</td>
+<td>3.170790</td>
+<td>6.049496</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">12</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>0.983957</td>
+<td>10.323484</td>
+<td>2.726991</td>
+<td>4.319125</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">8</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>0.102378</td>
+<td>2.072809</td>
+<td>0.504310</td>
+<td>0.834401</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">4</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>0.094669</td>
+<td>5.563272</td>
+<td>1.398560</td>
+<td>2.221591</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>0.189662</td>
+<td>0.503272</td>
+<td>0.330230</td>
+<td>0.342128</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">17</td>
+<td>0</td>
+<td>1</td>
+<td>rb</td>
+<td>rb</td>
+<td>rb</td>
+<td>0.036956</td>
+<td>0.326719</td>
+<td>0.162186</td>
+<td>0.172666</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">13</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>4.212200</td>
+<td>8.590524</td>
+<td>5.155012</td>
+<td>5.507362</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">9</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>1.790362</td>
+<td>2.214514</td>
+<td>1.974849</td>
+<td>1.985188</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">5</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>3.405160</td>
+<td>4.787453</td>
+<td>4.386851</td>
+<td>4.285338</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>1.100426</td>
+<td>1.692417</td>
+<td>1.499046</td>
+<td>1.426196</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">18</td>
+<td>0</td>
+<td>2</td>
+<td>rb</td>
+<td>rb</td>
+<td>rb</td>
+<td>0.081746</td>
+<td>11.074230</td>
+<td>0.464763</td>
+<td>2.338076</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">14</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>3.124944</td>
+<td>8.817876</td>
+<td>3.595503</td>
+<td>4.600149</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">10</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>1.773447</td>
+<td>2.166899</td>
+<td>1.950085</td>
+<td>1.962778</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">6</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>3.971522</td>
+<td>5.978111</td>
+<td>4.372321</td>
+<td>4.636217</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>1.080569</td>
+<td>1.598187</td>
+<td>1.412612</td>
+<td>1.405489</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">19</td>
+<td>0</td>
+<td>3</td>
+<td>rb</td>
+<td>rb</td>
+<td>rb</td>
+<td>0.012200</td>
+<td>0.115600</td>
+<td>0.059417</td>
+<td>0.060842</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">15</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>3.750621</td>
+<td>9.960906</td>
+<td>4.872004</td>
+<td>5.458930</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">11</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>1.914347</td>
+<td>2.268150</td>
+<td>2.030774</td>
+<td>2.070845</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">7</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>3.471149</td>
+<td>4.631220</td>
+<td>4.114618</td>
+<td>4.085160</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>1.502601</td>
+<td>1.705217</td>
+<td>1.558360</td>
+<td>1.574587</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<div id="a479e40e" class="cell" data-execution_count="12">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>show_non_conv_df(df_rhat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="46">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">genid</th>
+<th data-quarto-table-cell-role="th">param_id</th>
+<th data-quarto-table-cell-role="th">file_type</th>
+<th data-quarto-table-cell-role="th">model_dir</th>
+<th data-quarto-table-cell-role="th">model_name</th>
+<th data-quarto-table-cell-role="th">mu</th>
+<th data-quarto-table-cell-role="th">beta</th>
+<th data-quarto-table-cell-role="th">lambda_01</th>
+<th data-quarto-table-cell-role="th">lambda_10</th>
+<th data-quarto-table-cell-role="th">lambda_12</th>
+<th data-quarto-table-cell-role="th">lambda_21</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1</td>
+<td>0</td>
+<td>0</td>
+<td>rb</td>
+<td>rb</td>
+<td>rb</td>
+<td>1.004767</td>
+<td>1.003644</td>
+<td>1.009190</td>
+<td>1.015118</td>
+<td>1.034059</td>
+<td>1.006080</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">0</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>1.012742</td>
+<td>1.000096</td>
+<td>1.001707</td>
+<td>1.010266</td>
+<td>1.001204</td>
+<td>1.011029</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>0</td>
+<td>1</td>
+<td>rb</td>
+<td>rb</td>
+<td>rb</td>
+<td>1.020208</td>
+<td>1.035592</td>
+<td>1.095227</td>
+<td>1.080439</td>
+<td>1.062609</td>
+<td>1.018315</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>0</td>
+<td>2</td>
+<td>rb</td>
+<td>rb</td>
+<td>rb</td>
+<td>1.004162</td>
+<td>1.001497</td>
+<td>1.027523</td>
+<td>1.019905</td>
+<td>1.044472</td>
+<td>1.011898</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>0</td>
+<td>3</td>
+<td>rb</td>
+<td>rb</td>
+<td>rb</td>
+<td>1.049870</td>
+<td>1.046605</td>
+<td>1.340754</td>
+<td>1.124038</td>
+<td>1.046774</td>
+<td>1.099263</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<div id="93c61e01" class="cell" data-execution_count="13">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>show_df(df_tail)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="47">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">genid</th>
+<th data-quarto-table-cell-role="th">param_id</th>
+<th data-quarto-table-cell-role="th">file_type</th>
+<th data-quarto-table-cell-role="th">model_dir</th>
+<th data-quarto-table-cell-role="th">model_name</th>
+<th data-quarto-table-cell-role="th">min</th>
+<th data-quarto-table-cell-role="th">max</th>
+<th data-quarto-table-cell-role="th">median</th>
+<th data-quarto-table-cell-role="th">mean</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">16</td>
+<td>0</td>
+<td>0</td>
+<td>rb</td>
+<td>rb</td>
+<td>rb</td>
+<td>2.322878</td>
+<td>21.721478</td>
+<td>12.739001</td>
+<td>12.555519</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">12</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>0.307727</td>
+<td>10.706307</td>
+<td>0.394550</td>
+<td>3.351670</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">8</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>0.028556</td>
+<td>2.105063</td>
+<td>0.535678</td>
+<td>0.889286</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">4</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>0.016490</td>
+<td>6.519861</td>
+<td>1.682407</td>
+<td>2.599245</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>0.072375</td>
+<td>0.532535</td>
+<td>0.332465</td>
+<td>0.312002</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">17</td>
+<td>0</td>
+<td>1</td>
+<td>rb</td>
+<td>rb</td>
+<td>rb</td>
+<td>0.158242</td>
+<td>3.813850</td>
+<td>0.889313</td>
+<td>1.201845</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">13</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>3.077525</td>
+<td>9.238687</td>
+<td>5.023700</td>
+<td>5.220845</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">9</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>1.576371</td>
+<td>2.173328</td>
+<td>1.805500</td>
+<td>1.846558</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">5</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>2.608696</td>
+<td>5.235008</td>
+<td>4.531935</td>
+<td>4.217870</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>0.605328</td>
+<td>1.872666</td>
+<td>1.332260</td>
+<td>1.223402</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">18</td>
+<td>0</td>
+<td>2</td>
+<td>rb</td>
+<td>rb</td>
+<td>rb</td>
+<td>1.388679</td>
+<td>19.564721</td>
+<td>9.257631</td>
+<td>8.622420</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">14</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>2.507734</td>
+<td>9.142792</td>
+<td>2.754628</td>
+<td>4.136035</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">10</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>1.558015</td>
+<td>2.052101</td>
+<td>1.838606</td>
+<td>1.827998</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">6</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>2.876301</td>
+<td>5.756222</td>
+<td>3.646484</td>
+<td>3.960509</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>0.758191</td>
+<td>1.558659</td>
+<td>1.387679</td>
+<td>1.317127</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">19</td>
+<td>0</td>
+<td>3</td>
+<td>rb</td>
+<td>rb</td>
+<td>rb</td>
+<td>0.082708</td>
+<td>1.162951</td>
+<td>0.206050</td>
+<td>0.444689</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">15</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>2.292584</td>
+<td>10.323517</td>
+<td>4.297498</td>
+<td>4.916337</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">11</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>1.576214</td>
+<td>2.404427</td>
+<td>1.997351</td>
+<td>1.996355</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">7</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>1.854934</td>
+<td>5.189901</td>
+<td>3.926898</td>
+<td>3.775513</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>1.357072</td>
+<td>1.714380</td>
+<td>1.478178</td>
+<td>1.518907</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<div id="074022c8" class="cell" data-execution_count="14">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>df_bulk</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="48">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">mu</th>
+<th data-quarto-table-cell-role="th">beta</th>
+<th data-quarto-table-cell-role="th">lambda_01</th>
+<th data-quarto-table-cell-role="th">lambda_10</th>
+<th data-quarto-table-cell-role="th">lambda_12</th>
+<th data-quarto-table-cell-role="th">lambda_21</th>
+<th data-quarto-table-cell-role="th">min</th>
+<th data-quarto-table-cell-role="th">max</th>
+<th data-quarto-table-cell-role="th">median</th>
+<th data-quarto-table-cell-role="th">mean</th>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">genid</th>
+<th data-quarto-table-cell-role="th">param_id</th>
+<th data-quarto-table-cell-role="th">file_type</th>
+<th data-quarto-table-cell-role="th">model_dir</th>
+<th data-quarto-table-cell-role="th">model_name</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td rowspan="20" data-quarto-table-cell-role="th" data-valign="top">0</td>
+<td data-quarto-table-cell-role="th">0</td>
+<td data-quarto-table-cell-role="th">tppl</td>
+<td data-quarto-table-cell-role="th">rb-emul</td>
+<td data-quarto-table-cell-role="th">uniformization</td>
+<td>0.189662</td>
+<td>0.452664</td>
+<td>0.356160</td>
+<td>0.304300</td>
+<td>0.503272</td>
+<td>0.246714</td>
+<td>0.189662</td>
+<td>0.503272</td>
+<td>0.330230</td>
+<td>0.342128</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td data-quarto-table-cell-role="th">tppl</td>
+<td data-quarto-table-cell-role="th">rb-emul</td>
+<td data-quarto-table-cell-role="th">uniformization</td>
+<td>1.100426</td>
+<td>1.542072</td>
+<td>1.456020</td>
+<td>1.568580</td>
+<td>1.692417</td>
+<td>1.197663</td>
+<td>1.100426</td>
+<td>1.692417</td>
+<td>1.499046</td>
+<td>1.426196</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td data-quarto-table-cell-role="th">tppl</td>
+<td data-quarto-table-cell-role="th">rb-emul</td>
+<td data-quarto-table-cell-role="th">uniformization</td>
+<td>1.080569</td>
+<td>1.372335</td>
+<td>1.598187</td>
+<td>1.374676</td>
+<td>1.556618</td>
+<td>1.450549</td>
+<td>1.080569</td>
+<td>1.598187</td>
+<td>1.412612</td>
+<td>1.405489</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td data-quarto-table-cell-role="th">tppl</td>
+<td data-quarto-table-cell-role="th">rb-emul</td>
+<td data-quarto-table-cell-role="th">uniformization</td>
+<td>1.603167</td>
+<td>1.502601</td>
+<td>1.574524</td>
+<td>1.705217</td>
+<td>1.519817</td>
+<td>1.542196</td>
+<td>1.502601</td>
+<td>1.705217</td>
+<td>1.558360</td>
+<td>1.574587</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td data-quarto-table-cell-role="th">tppl</td>
+<td data-quarto-table-cell-role="th">rb-emul</td>
+<td data-quarto-table-cell-role="th">reject-accept</td>
+<td>0.094669</td>
+<td>4.764365</td>
+<td>2.679898</td>
+<td>0.110120</td>
+<td>5.563272</td>
+<td>0.117223</td>
+<td>0.094669</td>
+<td>5.563272</td>
+<td>1.398560</td>
+<td>2.221591</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td data-quarto-table-cell-role="th">tppl</td>
+<td data-quarto-table-cell-role="th">rb-emul</td>
+<td data-quarto-table-cell-role="th">reject-accept</td>
+<td>4.669962</td>
+<td>4.466651</td>
+<td>3.405160</td>
+<td>4.787453</td>
+<td>4.307051</td>
+<td>4.075753</td>
+<td>3.405160</td>
+<td>4.787453</td>
+<td>4.386851</td>
+<td>4.285338</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td data-quarto-table-cell-role="th">tppl</td>
+<td data-quarto-table-cell-role="th">rb-emul</td>
+<td data-quarto-table-cell-role="th">reject-accept</td>
+<td>3.988529</td>
+<td>5.134500</td>
+<td>4.200872</td>
+<td>3.971522</td>
+<td>5.978111</td>
+<td>4.543770</td>
+<td>3.971522</td>
+<td>5.978111</td>
+<td>4.372321</td>
+<td>4.636217</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td data-quarto-table-cell-role="th">tppl</td>
+<td data-quarto-table-cell-role="th">rb-emul</td>
+<td data-quarto-table-cell-role="th">reject-accept</td>
+<td>4.540231</td>
+<td>4.631220</td>
+<td>3.639124</td>
+<td>4.183603</td>
+<td>4.045632</td>
+<td>3.471149</td>
+<td>3.471149</td>
+<td>4.631220</td>
+<td>4.114618</td>
+<td>4.085160</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td data-quarto-table-cell-role="th">tppl</td>
+<td data-quarto-table-cell-role="th">independence</td>
+<td data-quarto-table-cell-role="th">uniformization</td>
+<td>0.102378</td>
+<td>2.072809</td>
+<td>0.839304</td>
+<td>0.169316</td>
+<td>1.679835</td>
+<td>0.142768</td>
+<td>0.102378</td>
+<td>2.072809</td>
+<td>0.504310</td>
+<td>0.834401</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td data-quarto-table-cell-role="th">tppl</td>
+<td data-quarto-table-cell-role="th">independence</td>
+<td data-quarto-table-cell-role="th">uniformization</td>
+<td>1.898490</td>
+<td>2.214514</td>
+<td>1.790362</td>
+<td>2.051207</td>
+<td>2.082914</td>
+<td>1.873643</td>
+<td>1.790362</td>
+<td>2.214514</td>
+<td>1.974849</td>
+<td>1.985188</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td data-quarto-table-cell-role="th">tppl</td>
+<td data-quarto-table-cell-role="th">independence</td>
+<td data-quarto-table-cell-role="th">uniformization</td>
+<td>1.773447</td>
+<td>2.166899</td>
+<td>1.936921</td>
+<td>1.903113</td>
+<td>2.033042</td>
+<td>1.963248</td>
+<td>1.773447</td>
+<td>2.166899</td>
+<td>1.950085</td>
+<td>1.962778</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td data-quarto-table-cell-role="th">tppl</td>
+<td data-quarto-table-cell-role="th">independence</td>
+<td data-quarto-table-cell-role="th">uniformization</td>
+<td>2.251761</td>
+<td>2.268150</td>
+<td>1.952282</td>
+<td>2.109266</td>
+<td>1.929261</td>
+<td>1.914347</td>
+<td>1.914347</td>
+<td>2.268150</td>
+<td>2.030774</td>
+<td>2.070845</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td data-quarto-table-cell-role="th">tppl</td>
+<td data-quarto-table-cell-role="th">independence</td>
+<td data-quarto-table-cell-role="th">reject-accept</td>
+<td>0.983957</td>
+<td>10.323484</td>
+<td>3.716406</td>
+<td>1.397701</td>
+<td>7.755628</td>
+<td>1.737576</td>
+<td>0.983957</td>
+<td>10.323484</td>
+<td>2.726991</td>
+<td>4.319125</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td data-quarto-table-cell-role="th">tppl</td>
+<td data-quarto-table-cell-role="th">independence</td>
+<td data-quarto-table-cell-role="th">reject-accept</td>
+<td>5.290628</td>
+<td>8.590524</td>
+<td>4.212200</td>
+<td>5.274694</td>
+<td>5.035330</td>
+<td>4.640797</td>
+<td>4.212200</td>
+<td>8.590524</td>
+<td>5.155012</td>
+<td>5.507362</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td data-quarto-table-cell-role="th">tppl</td>
+<td data-quarto-table-cell-role="th">independence</td>
+<td data-quarto-table-cell-role="th">reject-accept</td>
+<td>3.323002</td>
+<td>8.817876</td>
+<td>3.868004</td>
+<td>3.124944</td>
+<td>5.163837</td>
+<td>3.303230</td>
+<td>3.124944</td>
+<td>8.817876</td>
+<td>3.595503</td>
+<td>4.600149</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td data-quarto-table-cell-role="th">tppl</td>
+<td data-quarto-table-cell-role="th">independence</td>
+<td data-quarto-table-cell-role="th">reject-accept</td>
+<td>4.982764</td>
+<td>9.960906</td>
+<td>3.750621</td>
+<td>5.170198</td>
+<td>4.761244</td>
+<td>4.127845</td>
+<td>3.750621</td>
+<td>9.960906</td>
+<td>4.872004</td>
+<td>5.458930</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td data-quarto-table-cell-role="th">rb</td>
+<td data-quarto-table-cell-role="th">rb</td>
+<td data-quarto-table-cell-role="th">rb</td>
+<td>13.775409</td>
+<td>2.258495</td>
+<td>4.083085</td>
+<td>0.382573</td>
+<td>0.152756</td>
+<td>15.644658</td>
+<td>0.152756</td>
+<td>15.644658</td>
+<td>3.170790</td>
+<td>6.049496</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td data-quarto-table-cell-role="th">rb</td>
+<td data-quarto-table-cell-role="th">rb</td>
+<td data-quarto-table-cell-role="th">rb</td>
+<td>0.326719</td>
+<td>0.266152</td>
+<td>0.036956</td>
+<td>0.043080</td>
+<td>0.058219</td>
+<td>0.304871</td>
+<td>0.036956</td>
+<td>0.326719</td>
+<td>0.162186</td>
+<td>0.172666</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td data-quarto-table-cell-role="th">rb</td>
+<td data-quarto-table-cell-role="th">rb</td>
+<td data-quarto-table-cell-role="th">rb</td>
+<td>11.074230</td>
+<td>1.772875</td>
+<td>0.170080</td>
+<td>0.222315</td>
+<td>0.081746</td>
+<td>0.707210</td>
+<td>0.081746</td>
+<td>11.074230</td>
+<td>0.464763</td>
+<td>2.338076</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td data-quarto-table-cell-role="th">rb</td>
+<td data-quarto-table-cell-role="th">rb</td>
+<td data-quarto-table-cell-role="th">rb</td>
+<td>0.090905</td>
+<td>0.115600</td>
+<td>0.012200</td>
+<td>0.027513</td>
+<td>0.084374</td>
+<td>0.034460</td>
+<td>0.012200</td>
+<td>0.115600</td>
+<td>0.059417</td>
+<td>0.060842</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<div id="d04d957b" class="cell" data-execution_count="15">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>show_df(df_rhat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="49">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">genid</th>
+<th data-quarto-table-cell-role="th">param_id</th>
+<th data-quarto-table-cell-role="th">file_type</th>
+<th data-quarto-table-cell-role="th">model_dir</th>
+<th data-quarto-table-cell-role="th">model_name</th>
+<th data-quarto-table-cell-role="th">min</th>
+<th data-quarto-table-cell-role="th">max</th>
+<th data-quarto-table-cell-role="th">median</th>
+<th data-quarto-table-cell-role="th">mean</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">16</td>
+<td>0</td>
+<td>0</td>
+<td>rb</td>
+<td>rb</td>
+<td>rb</td>
+<td>1.003644</td>
+<td>1.034059</td>
+<td>1.007635</td>
+<td>1.012143</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">12</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>0.999984</td>
+<td>1.001436</td>
+<td>1.000708</td>
+<td>1.000713</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">8</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>1.000017</td>
+<td>1.003508</td>
+<td>1.001336</td>
+<td>1.001633</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">4</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>1.000096</td>
+<td>1.012742</td>
+<td>1.005986</td>
+<td>1.006174</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>0</td>
+<td>0</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">17</td>
+<td>0</td>
+<td>1</td>
+<td>rb</td>
+<td>rb</td>
+<td>rb</td>
+<td>1.018315</td>
+<td>1.095227</td>
+<td>1.049101</td>
+<td>1.052065</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">13</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>0.999945</td>
+<td>1.000322</td>
+<td>1.000158</td>
+<td>1.000154</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">9</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>0.999916</td>
+<td>1.000156</td>
+<td>1.000017</td>
+<td>1.000033</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">5</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>1.000083</td>
+<td>1.000657</td>
+<td>1.000200</td>
+<td>1.000263</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>0</td>
+<td>1</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>0.999916</td>
+<td>1.000132</td>
+<td>1.000074</td>
+<td>1.000052</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">18</td>
+<td>0</td>
+<td>2</td>
+<td>rb</td>
+<td>rb</td>
+<td>rb</td>
+<td>1.001497</td>
+<td>1.044472</td>
+<td>1.015902</td>
+<td>1.018243</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">14</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>1.000003</td>
+<td>1.000666</td>
+<td>1.000301</td>
+<td>1.000321</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">10</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>0.999937</td>
+<td>1.000225</td>
+<td>1.000020</td>
+<td>1.000066</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">6</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>1.000039</td>
+<td>1.000367</td>
+<td>1.000110</td>
+<td>1.000161</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>0</td>
+<td>2</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>0.999962</td>
+<td>1.000166</td>
+<td>1.000085</td>
+<td>1.000081</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">19</td>
+<td>0</td>
+<td>3</td>
+<td>rb</td>
+<td>rb</td>
+<td>rb</td>
+<td>1.046605</td>
+<td>1.340754</td>
+<td>1.074566</td>
+<td>1.117884</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">15</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>independence</td>
+<td>reject-accept</td>
+<td>1.000068</td>
+<td>1.000587</td>
+<td>1.000294</td>
+<td>1.000314</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">11</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>independence</td>
+<td>uniformization</td>
+<td>0.999987</td>
+<td>1.000185</td>
+<td>1.000063</td>
+<td>1.000075</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">7</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>reject-accept</td>
+<td>1.000030</td>
+<td>1.000382</td>
+<td>1.000191</td>
+<td>1.000188</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>0</td>
+<td>3</td>
+<td>tppl</td>
+<td>rb-emul</td>
+<td>uniformization</td>
+<td>1.000036</td>
+<td>1.000135</td>
+<td>1.000110</td>
+<td>1.000094</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<div id="67259964" class="cell" data-execution_count="16">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>preserve <span class="op">=</span> [<span class="st">"file_type"</span>, <span class="st">"model_dir"</span>, <span class="st">"model_name"</span>]</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>df_bulk_plot <span class="op">=</span> df_bulk.sort_values([<span class="st">"file_type"</span>, <span class="st">"model_name"</span>, <span class="st">"model_dir"</span>])</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Build plot</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">6</span>))</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>axs <span class="op">=</span> axs.flatten()</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> h <span class="kw">in</span> [<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>]:</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>    gen_hist_idx <span class="op">=</span> h</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>    ax <span class="op">=</span> axs[h]</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>    plot_data <span class="op">=</span> df_bulk_plot.loc[(<span class="dv">0</span>, gen_hist_idx)].reset_index()</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>    df_long <span class="op">=</span> plot_data.melt(</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>        id_vars<span class="op">=</span>preserve, var_name<span class="op">=</span><span class="st">"variable"</span>, value_name<span class="op">=</span><span class="st">"ess_per_s"</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>    df_long[<span class="st">"group_label"</span>] <span class="op">=</span> df_long.<span class="bu">apply</span>(</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>        <span class="kw">lambda</span> row: <span class="bu">tuple</span>([row[n] <span class="cf">for</span> n <span class="kw">in</span> preserve]), axis<span class="op">=</span><span class="dv">1</span></span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>    df_long[<span class="st">"color"</span>] <span class="op">=</span> df_long[<span class="st">"group_label"</span>].<span class="bu">map</span>(<span class="kw">lambda</span> x: hierarchical_palette[x])</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>    df_long[<span class="st">"custom_label"</span>] <span class="op">=</span> df_long[<span class="st">"group_label"</span>].<span class="bu">map</span>(<span class="kw">lambda</span> x: get_label(<span class="op">*</span>x))</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Get bar width and offsets</span></span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>    group_width <span class="op">=</span> <span class="fl">0.8</span></span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>    n_bars <span class="op">=</span> df_long[<span class="st">"custom_label"</span>].nunique()</span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>    bar_width <span class="op">=</span> group_width <span class="op">/</span> n_bars</span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a>    variables <span class="op">=</span> [<span class="st">"mu"</span>, <span class="st">"beta"</span>, <span class="st">"lambda_01"</span>, <span class="st">"lambda_10"</span>, <span class="st">"lambda_12"</span>, <span class="st">"lambda_21"</span>]</span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>    bar_labels <span class="op">=</span> df_long[<span class="st">"custom_label"</span>].unique()</span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i, label <span class="kw">in</span> <span class="bu">enumerate</span>(bar_labels):</span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> j, var <span class="kw">in</span> <span class="bu">enumerate</span>(variables):</span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a>            y_val <span class="op">=</span> df_long.query(<span class="st">"variable == @var and custom_label == @label"</span>)[</span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a>                <span class="st">"ess_per_s"</span></span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a>            ]</span>
+<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="kw">not</span> y_val.empty:</span>
+<span id="cb18-32"><a href="#cb18-32" aria-hidden="true" tabindex="-1"></a>                ax.bar(</span>
+<span id="cb18-33"><a href="#cb18-33" aria-hidden="true" tabindex="-1"></a>                    j <span class="op">+</span> i <span class="op">*</span> bar_width <span class="op">-</span> group_width <span class="op">/</span> <span class="dv">2</span> <span class="op">+</span> bar_width <span class="op">/</span> <span class="dv">2</span>,</span>
+<span id="cb18-34"><a href="#cb18-34" aria-hidden="true" tabindex="-1"></a>                    y_val.values[<span class="dv">0</span>],</span>
+<span id="cb18-35"><a href="#cb18-35" aria-hidden="true" tabindex="-1"></a>                    width<span class="op">=</span>bar_width,</span>
+<span id="cb18-36"><a href="#cb18-36" aria-hidden="true" tabindex="-1"></a>                    color<span class="op">=</span>df_long.query(<span class="st">"custom_label == @label"</span>)[<span class="st">"color"</span>].values[<span class="dv">0</span>],</span>
+<span id="cb18-37"><a href="#cb18-37" aria-hidden="true" tabindex="-1"></a>                    label<span class="op">=</span>(</span>
+<span id="cb18-38"><a href="#cb18-38" aria-hidden="true" tabindex="-1"></a>                        label <span class="cf">if</span> j <span class="op">==</span> <span class="dv">0</span> <span class="cf">else</span> <span class="st">""</span></span>
+<span id="cb18-39"><a href="#cb18-39" aria-hidden="true" tabindex="-1"></a>                    ),  <span class="co"># only label first occurrence for legend</span></span>
+<span id="cb18-40"><a href="#cb18-40" aria-hidden="true" tabindex="-1"></a>                    linewidth<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb18-41"><a href="#cb18-41" aria-hidden="true" tabindex="-1"></a>                )</span>
+<span id="cb18-42"><a href="#cb18-42" aria-hidden="true" tabindex="-1"></a>    <span class="co"># X-axis setup</span></span>
+<span id="cb18-43"><a href="#cb18-43" aria-hidden="true" tabindex="-1"></a>    ax.set_xticks(<span class="bu">range</span>(<span class="bu">len</span>(variables)))</span>
+<span id="cb18-44"><a href="#cb18-44" aria-hidden="true" tabindex="-1"></a>    ax.set_xticklabels([vars_to_tex[v] <span class="cf">for</span> v <span class="kw">in</span> variables])</span>
+<span id="cb18-45"><a href="#cb18-45" aria-hidden="true" tabindex="-1"></a>    ax.set_xlabel(<span class="st">""</span>)</span>
+<span id="cb18-46"><a href="#cb18-46" aria-hidden="true" tabindex="-1"></a>    ax.set_ylabel(<span class="st">"ESS / s"</span>)</span>
+<span id="cb18-47"><a href="#cb18-47" aria-hidden="true" tabindex="-1"></a>    ax.set_title(</span>
+<span id="cb18-48"><a href="#cb18-48" aria-hidden="true" tabindex="-1"></a>        <span class="vs">rf"$\mu^* = $ </span><span class="sc">{</span>data_params<span class="sc">.</span>loc[h, <span class="st">'mu'</span>]<span class="sc">}</span><span class="vs">, "</span></span>
+<span id="cb18-49"><a href="#cb18-49" aria-hidden="true" tabindex="-1"></a>        <span class="vs">rf"$\beta^* = $ </span><span class="sc">{</span>data_params<span class="sc">.</span>loc[h, <span class="st">'beta'</span>]<span class="sc">}</span><span class="vs">"</span></span>
+<span id="cb18-50"><a href="#cb18-50" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb18-51"><a href="#cb18-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-52"><a href="#cb18-52" aria-hidden="true" tabindex="-1"></a>fig.suptitle(<span class="st">"ESS/s per Variable and Method-Run"</span>)</span>
+<span id="cb18-53"><a href="#cb18-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-54"><a href="#cb18-54" aria-hidden="true" tabindex="-1"></a><span class="co"># Legend</span></span>
+<span id="cb18-55"><a href="#cb18-55" aria-hidden="true" tabindex="-1"></a>handles, labels <span class="op">=</span> ax.get_legend_handles_labels()</span>
+<span id="cb18-56"><a href="#cb18-56" aria-hidden="true" tabindex="-1"></a>by_label <span class="op">=</span> <span class="bu">dict</span>(<span class="bu">zip</span>(labels, handles))  <span class="co"># remove duplicates</span></span>
+<span id="cb18-57"><a href="#cb18-57" aria-hidden="true" tabindex="-1"></a>ax.legend(</span>
+<span id="cb18-58"><a href="#cb18-58" aria-hidden="true" tabindex="-1"></a>    by_label.values(), by_label.keys(), title<span class="op">=</span><span class="st">"Method"</span>, bbox_to_anchor<span class="op">=</span>(<span class="fl">1.0</span>, <span class="fl">1.00</span>)</span>
+<span id="cb18-59"><a href="#cb18-59" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb18-60"><a href="#cb18-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-61"><a href="#cb18-61" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb18-62"><a href="#cb18-62" aria-hidden="true" tabindex="-1"></a>fig.savefig(<span class="st">"ESS_p_s.pdf"</span>)</span>
+<span id="cb18-63"><a href="#cb18-63" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>/tmp/ipykernel_265186/1557134717.py:10: PerformanceWarning: indexing past lexsort depth may impact performance.
+  plot_data = df_bulk_plot.loc[(0, gen_hist_idx)].reset_index()
+/tmp/ipykernel_265186/1557134717.py:10: PerformanceWarning: indexing past lexsort depth may impact performance.
+  plot_data = df_bulk_plot.loc[(0, gen_hist_idx)].reset_index()
+/tmp/ipykernel_265186/1557134717.py:10: PerformanceWarning: indexing past lexsort depth may impact performance.
+  plot_data = df_bulk_plot.loc[(0, gen_hist_idx)].reset_index()
+/tmp/ipykernel_265186/1557134717.py:10: PerformanceWarning: indexing past lexsort depth may impact performance.
+  plot_data = df_bulk_plot.loc[(0, gen_hist_idx)].reset_index()</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="test_report_not_gen_files/figure-html/cell-17-output-2.png" width="948" height="566" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<div id="baedb251" class="cell" data-execution_count="17">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> df_sns.loc[(<span class="dv">0</span>, gen_hist_idx)]</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>fig, axd <span class="op">=</span> gen_fig_axd()</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, (k, row) <span class="kw">in</span> <span class="bu">enumerate</span>(data.iterrows()):</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    fp <span class="op">=</span> row[<span class="st">"file_type"</span>]</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    row_data <span class="op">=</span> row[<span class="st">"pooled"</span>].posterior.to_dataframe()</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    m_key <span class="op">=</span> (fp, row[<span class="st">"model_dir"</span>], row[<span class="st">"model_name"</span>])</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>    label <span class="op">=</span> get_label(<span class="op">*</span>m_key)</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>    color <span class="op">=</span> hierarchical_palette[m_key]</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>    style <span class="op">=</span> h_style[m_key]</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> var <span class="kw">in</span> <span class="bu">vars</span>:</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>        ax <span class="op">=</span> axd[var]</span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>        sns.kdeplot(</span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>            data<span class="op">=</span>row_data,</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>            x<span class="op">=</span>var,</span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>            color<span class="op">=</span>color,</span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>            ax<span class="op">=</span>ax,</span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>            label<span class="op">=</span>label,</span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>            legend<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>            bw_method<span class="op">=</span><span class="fl">0.1</span>,</span>
+<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a>            alpha<span class="op">=</span><span class="fl">1.0</span>,</span>
+<span id="cb20-21"><a href="#cb20-21" aria-hidden="true" tabindex="-1"></a>            <span class="op">**</span>style,</span>
+<span id="cb20-22"><a href="#cb20-22" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb20-23"><a href="#cb20-23" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Fill</span></span>
+<span id="cb20-24"><a href="#cb20-24" aria-hidden="true" tabindex="-1"></a>        sns.kdeplot(</span>
+<span id="cb20-25"><a href="#cb20-25" aria-hidden="true" tabindex="-1"></a>            data<span class="op">=</span>row_data,</span>
+<span id="cb20-26"><a href="#cb20-26" aria-hidden="true" tabindex="-1"></a>            x<span class="op">=</span>var,</span>
+<span id="cb20-27"><a href="#cb20-27" aria-hidden="true" tabindex="-1"></a>            color<span class="op">=</span>color,</span>
+<span id="cb20-28"><a href="#cb20-28" aria-hidden="true" tabindex="-1"></a>            ax<span class="op">=</span>ax,</span>
+<span id="cb20-29"><a href="#cb20-29" aria-hidden="true" tabindex="-1"></a>            legend<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb20-30"><a href="#cb20-30" aria-hidden="true" tabindex="-1"></a>            alpha<span class="op">=</span><span class="fl">0.1</span>,</span>
+<span id="cb20-31"><a href="#cb20-31" aria-hidden="true" tabindex="-1"></a>            linewidth<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb20-32"><a href="#cb20-32" aria-hidden="true" tabindex="-1"></a>            bw_method<span class="op">=</span><span class="fl">0.1</span>,</span>
+<span id="cb20-33"><a href="#cb20-33" aria-hidden="true" tabindex="-1"></a>            fill<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb20-34"><a href="#cb20-34" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb20-35"><a href="#cb20-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-36"><a href="#cb20-36" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> var <span class="kw">in</span> <span class="bu">vars</span>:</span>
+<span id="cb20-37"><a href="#cb20-37" aria-hidden="true" tabindex="-1"></a>    ax <span class="op">=</span> axd[var]</span>
+<span id="cb20-38"><a href="#cb20-38" aria-hidden="true" tabindex="-1"></a>    ax.set_xlabel(vars_to_tex[var], fontsize<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb20-39"><a href="#cb20-39" aria-hidden="true" tabindex="-1"></a>    ax.set_ylabel(<span class="st">""</span>)</span>
+<span id="cb20-40"><a href="#cb20-40" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> var.startswith(<span class="st">"lambda"</span>):</span>
+<span id="cb20-41"><a href="#cb20-41" aria-hidden="true" tabindex="-1"></a>        ax.set_xlim([<span class="fl">0.0</span>, <span class="fl">1.0</span>])</span>
+<span id="cb20-42"><a href="#cb20-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb20-43"><a href="#cb20-43" aria-hidden="true" tabindex="-1"></a>        ax.set_xlim(left<span class="op">=</span><span class="fl">0.0</span>)</span>
+<span id="cb20-44"><a href="#cb20-44" aria-hidden="true" tabindex="-1"></a>    gen_val <span class="op">=</span> (</span>
+<span id="cb20-45"><a href="#cb20-45" aria-hidden="true" tabindex="-1"></a>        data_params.loc[gen_hist_idx, <span class="st">""</span>.join(var.split(<span class="st">"_"</span>))] <span class="op">/</span> <span class="dv">100</span></span>
+<span id="cb20-46"><a href="#cb20-46" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> var.startswith(<span class="st">"lambda"</span>)</span>
+<span id="cb20-47"><a href="#cb20-47" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span> data_params.loc[gen_hist_idx, var]</span>
+<span id="cb20-48"><a href="#cb20-48" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb20-49"><a href="#cb20-49" aria-hidden="true" tabindex="-1"></a>    ax.axvline(</span>
+<span id="cb20-50"><a href="#cb20-50" aria-hidden="true" tabindex="-1"></a>        gen_val,</span>
+<span id="cb20-51"><a href="#cb20-51" aria-hidden="true" tabindex="-1"></a>        color<span class="op">=</span><span class="st">"red"</span>,</span>
+<span id="cb20-52"><a href="#cb20-52" aria-hidden="true" tabindex="-1"></a>        linestyle<span class="op">=</span><span class="st">"--"</span>,</span>
+<span id="cb20-53"><a href="#cb20-53" aria-hidden="true" tabindex="-1"></a>        linewidth<span class="op">=</span><span class="dv">2</span>,</span>
+<span id="cb20-54"><a href="#cb20-54" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb20-55"><a href="#cb20-55" aria-hidden="true" tabindex="-1"></a>    xticks <span class="op">=</span> ax.get_xticks()</span>
+<span id="cb20-56"><a href="#cb20-56" aria-hidden="true" tabindex="-1"></a>    ax.set_xticks(<span class="bu">sorted</span>(<span class="bu">set</span>(<span class="bu">list</span>(xticks) <span class="op">+</span> [gen_val])))</span>
+<span id="cb20-57"><a href="#cb20-57" aria-hidden="true" tabindex="-1"></a>    ax.tick_params(axis<span class="op">=</span><span class="st">"x"</span>, labelsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb20-58"><a href="#cb20-58" aria-hidden="true" tabindex="-1"></a>    ax.tick_params(axis<span class="op">=</span><span class="st">"y"</span>, labelsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb20-59"><a href="#cb20-59" aria-hidden="true" tabindex="-1"></a>axd[<span class="st">"lambda_21"</span>].legend(bbox_to_anchor<span class="op">=</span>(<span class="fl">1.0</span>, <span class="fl">1.00</span>))</span>
+<span id="cb20-60"><a href="#cb20-60" aria-hidden="true" tabindex="-1"></a>fig.suptitle(<span class="ss">f"Densities for generated dataset  #</span><span class="sc">{</span>gen_hist_idx<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb20-61"><a href="#cb20-61" aria-hidden="true" tabindex="-1"></a><span class="co"># fig.tight_layout()</span></span>
+<span id="cb20-62"><a href="#cb20-62" aria-hidden="true" tabindex="-1"></a><span class="co">"""</span></span>
+<span id="cb20-63"><a href="#cb20-63" aria-hidden="true" tabindex="-1"></a><span class="co">fig.subplots_adjust(</span></span>
+<span id="cb20-64"><a href="#cb20-64" aria-hidden="true" tabindex="-1"></a><span class="co">    hspace=0.4,  # vertical spacing between rows</span></span>
+<span id="cb20-65"><a href="#cb20-65" aria-hidden="true" tabindex="-1"></a><span class="co">    wspace=4.5,  # horizontal spacing between columns</span></span>
+<span id="cb20-66"><a href="#cb20-66" aria-hidden="true" tabindex="-1"></a><span class="co">    left=0.05,</span></span>
+<span id="cb20-67"><a href="#cb20-67" aria-hidden="true" tabindex="-1"></a><span class="co">    right=0.95,</span></span>
+<span id="cb20-68"><a href="#cb20-68" aria-hidden="true" tabindex="-1"></a><span class="co">    top=0.52,</span></span>
+<span id="cb20-69"><a href="#cb20-69" aria-hidden="true" tabindex="-1"></a><span class="co">    bottom=0.08,  # margins</span></span>
+<span id="cb20-70"><a href="#cb20-70" aria-hidden="true" tabindex="-1"></a><span class="co">)</span></span>
+<span id="cb20-71"><a href="#cb20-71" aria-hidden="true" tabindex="-1"></a><span class="co">"""</span></span>
+<span id="cb20-72"><a href="#cb20-72" aria-hidden="true" tabindex="-1"></a>fig.show()</span>
+<span id="cb20-73"><a href="#cb20-73" aria-hidden="true" tabindex="-1"></a>fig.savefig(proc_output.get_temp_dir(RUN_NAME) <span class="op">/</span> <span class="ss">f"densities.</span><span class="sc">{</span>gen_hist_idx<span class="sc">}</span><span class="ss">.pdf"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>/tmp/ipykernel_265186/643760297.py:1: PerformanceWarning: indexing past lexsort depth may impact performance.
+  data = df_sns.loc[(0, gen_hist_idx)]
+/tmp/ipykernel_265186/643760297.py:72: UserWarning: FigureCanvasAgg is non-interactive, and thus cannot be shown
+  fig.show()</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="test_report_not_gen_files/figure-html/cell-18-output-2.png" width="945" height="896" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
