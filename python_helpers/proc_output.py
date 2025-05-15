@@ -541,8 +541,9 @@ def get_trees(df_fn, file_type="tppl"):
     return df_fn
 
 
-def inference_data_from_dataframe(df, run_name, chain=0, burnin=0, subsample=1):
-    index = df.index[burnin::subsample]
+def inference_data_from_dataframe(df, run_name, chain=0, burnin=0, subsample=1, end=-1):
+    index = df.index[burnin:end:subsample]
+    print(run_name, len(index))
     df = df.iloc[index, :]
     df.loc[:, "chain"] = 0
     df.loc[:, "draw"] = index
@@ -552,7 +553,7 @@ def inference_data_from_dataframe(df, run_name, chain=0, burnin=0, subsample=1):
     return az.InferenceData(posterior=xdata)
 
 
-def create_inference_data_df(file_df, read_funcs, burnin, subsample=1):
+def create_inference_data_df(file_df, read_funcs, burnin, subsample=1, end=-1):
     def row_to_chain_name(row):
         return (
             f"{row["file_type"]}."
@@ -567,6 +568,7 @@ def create_inference_data_df(file_df, read_funcs, burnin, subsample=1):
             row_to_chain_name(row),
             chain=i,
             burnin=burnin,
+            end=end,
             subsample=subsample,
         )
         for i, row in file_df.iterrows()
@@ -728,7 +730,7 @@ def get_ess_df(df, name_cols, groupby_cols, data_col="inference_data"):
         global title_counter
         title_counter += 1
         return (
-            ".".join(str(row[c]) for c in name_cols if c in row) + f".{title_counter}"
+            ",".join(str(row[c]) for c in name_cols if c in row) + f",{title_counter}"
         )
 
     name_cols_no_groupby = list(set(name_cols) - set(groupby_cols))
@@ -762,12 +764,19 @@ def calc_ess(df, data_col="inference_data"):
     return df_ess
 
 
+def sort_single(row):
+    srow = row.split(",")
+    s1 = ".".join(srow[:-1])
+    s2 = int(srow[-1])
+    return (s1, s2)
+
+
 def ess_bar_plot(
     df_ess,
     ax=None,
     var_cols=["mu", "beta", "lambda_01", "lambda_10", "lambda_12", "lambda_21"],
 ):
-    df_ess = df_ess.sort_values(by="name")
+    df_ess = df_ess.sort_values(by=["name"], key=lambda s: s.map(sort_single))
     df_ess_long = df_ess[["name"] + var_cols].melt(
         id_vars="name", var_name="Variable", value_name="ESS"
     )
