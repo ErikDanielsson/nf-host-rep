@@ -447,7 +447,7 @@ def generate_report(
         df_groupby_values_rb = global_variables["reduced_df_rb"].index.to_frame(
             index=False
         )
-        if global_variables["has_rb"]:
+        if global_variables["has_tppl"]:
             df_groupby_values = pd.concat(
                 [df_groupby_values_tppl, df_groupby_values_rb], ignore_index=True
             )
@@ -575,7 +575,7 @@ def generate_report(
 
         if True:
             df_groupby_values = df_groupby_values.sort_values(
-                by=["genid", "param_id", "file_type", "model_dir", "model_name"]
+                by=["genid", "param_id", "file_type"]  # , "model_dir", "model_name"]
             )
             grouped = df_groupby_values.groupby(by=["genid", "param_id"])
 

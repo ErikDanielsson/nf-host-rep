@@ -21,7 +21,7 @@ include {
 } from "./modules/treeppl"
 
 include {
-    run_hostrep_revbayes
+    run_hostrep_revbayes_no_tree
 } from "./modules/revbayes"
 
 
@@ -293,7 +293,7 @@ workflow {
             .combine(interactions_nex_ch, by: 0)
         )
 
-        revbayes_out_ch = run_hostrep_revbayes(
+        revbayes_out_ch = run_hostrep_revbayes_no_tree(
             rev_bayes_in_ch,
             niter
         )

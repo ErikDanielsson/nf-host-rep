@@ -542,8 +542,9 @@ def get_trees(df_fn, file_type="tppl"):
 
 
 def inference_data_from_dataframe(df, run_name, chain=0, burnin=0, subsample=1, end=-1):
+    if len(df.index) < end:
+        raise EOFError(f"Fewer than {end} samples in df ({len(df.index)})")
     index = df.index[burnin:end:subsample]
-    print(run_name, len(index))
     df = df.iloc[index, :]
     df.loc[:, "chain"] = 0
     df.loc[:, "draw"] = index
@@ -643,7 +644,6 @@ def add_dim_pooled_dataset(
         print(row[data_col].posterior)
         return row[data_col]
 
-    print(df_pooled)
     df_pooled[data_col] = df_pooled.reset_index()[name_cols + [data_col]].apply(
         new_dims
     )
