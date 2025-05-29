@@ -57,6 +57,10 @@ def get_rb_output_pattern():
     return re.compile(r"out\.(\d+)\.(\d+)\.(\d+)\.log$")
 
 
+def get_rb_history_pattern():
+    return re.compile(r"out\.(\d+)\.(\d+)\.(\d+)\.history\.txt$")
+
+
 def get_simtree_output_pattern():
     return re.compile(r"simtree_and_interactions\.(\d+)\.(\d+)\.json")
 
