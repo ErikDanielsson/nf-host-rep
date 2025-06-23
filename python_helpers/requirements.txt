@@ -1,0 +1,9 @@
+arviz
+xarray
+matplotlib
+pandas
+numpy
+graphviz
+seaborn
+jupyter
+ipykernel
