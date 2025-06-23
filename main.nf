@@ -4,16 +4,16 @@ include {
     generate_trees ;
     clean_phyjson ;
     tree_phyjson
-} from "./modules/gendata/trees"
+} from "./modules/trees"
 
 include {
     rev_annotate_tree as rev_annotate_tree_host ;
     rev_annotate_tree as rev_annotate_tree_symbiont
-} from "./modules/gendata/trees"
+} from "./modules/trees"
 
 include {
     generate_random_interactions
-} from "./modules/gendata/interactions/random"
+} from "./modules/interactions_random"
 
 include {
     compile_model ;
@@ -24,23 +24,17 @@ include {
     run_hostrep_revbayes
 } from "./modules/revbayes"
 
-
-include {
-    revbayes_interactions ;
-    clean_rb_csv
-} from "./modules/gendata/interactions/revbayes"
-
 include {
     compile_interactions_tppl ;
     run_interactions_tppl ;
     add_params_phyjson ;
     interactions_json_to_csv ;
     interactions_csv_to_nex
-} from "./modules/gendata/interactions/treeppl"
+} from "./modules/interactions_treeppl"
 
 include {
     add_interactions_to_phyjson
-} from "./modules/gendata/interactions/helpers"
+} from "./modules/interactions_helpers"
 
 workflow {
     // Define the simulations
@@ -52,31 +46,6 @@ workflow {
     def int niter = params.niter
 
     tppl_lib_ch = Channel.fromPath("${params.tppl_lib_path}/*").collect()
-
-    // Read the simulation parameters from the provided file
-    param_id = 0
-    params_config_ch = Channel.fromPath("${baseDir}/${params.params_config}")
-        | splitCsv(sep: "\t", header: true)
-        | map { row ->
-            [
-                ++param_id,
-                row.mu,
-                row.beta,
-                row.lambda01,
-                row.lambda10,
-                row.lambda12,
-                row.lambda21,
-                row.seed,
-            ]
-        }
-
-    // Save the parameters into the output directory to be read by downstream analyses
-    params_config_ch.collectFile(
-        name: "param_id_to_configuration.csv",
-        storeDir: file(params.datadir),
-        newLine: true,
-        sort: true,
-    ) { pid, mu, beta, l0, l1, l2, l3, s -> "${pid}\t${mu}\t${beta}\t${l0}\t${l1}\t${l2}\t${l3}\t${s}" }
 
     /*
      * Generate the host and symbiont trees
@@ -140,8 +109,9 @@ workflow {
     )
         | clean_phyjson
 
+
     /*
-     * Generate the interactions
+     * Generate the host-symbiont interactions
      * 
      * If we use the treeppl script to generate interactions with a phylogenetic signal,
      * we will use the provided parameters in the `params_config_ch` channel.
@@ -150,6 +120,33 @@ workflow {
      * without regards to the trees.
      * 
      */
+
+    // Read the simulation parameters from the provided file
+    param_id = 0
+    params_config_ch = Channel.fromPath("${baseDir}/${params.params_config}")
+        | splitCsv(sep: "\t", header: true)
+        | map { row ->
+            [
+                ++param_id,
+                row.mu,
+                row.beta,
+                row.lambda01,
+                row.lambda10,
+                row.lambda12,
+                row.lambda21,
+                row.seed,
+            ]
+        }
+
+    // Save the parameters into the output directory to be read by downstream analyses
+    params_config_ch.collectFile(
+        name: "param_id_to_configuration.csv",
+        storeDir: file(params.datadir),
+        newLine: true,
+        sort: true,
+    ) { pid, mu, beta, l0, l1, l2, l3, s -> "${pid}\t${mu}\t${beta}\t${l0}\t${l1}\t${l2}\t${l3}\t${s}" }
+
+
     def interactions_csv_ch
     def interactions_nex_ch
     if (params.interactions == "treeppl") {
@@ -189,8 +186,7 @@ workflow {
             interactions_sim_in_ch
         )
 
-        // To allow RevBayes to use the interactions we generate 
-        // a NeXus via a CSV file.
+        // Convert the phyjson output to a CSV file for later use
         interactions_csv_ch = interactions_json_to_csv(
             run_interactions_tppl.out.interactions_json.combine(
                 rev_annotate_tree_host.out.name_map,
@@ -200,6 +196,7 @@ workflow {
                 by: 0
             )
         )
+        // To allow RevBayes to use the interactions we generate a Nexus file
         interactions_nex_ch = interactions_csv_to_nex(
             interactions_csv_ch
         )
