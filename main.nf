@@ -16,15 +16,6 @@ include {
 } from "./modules/interactions_random"
 
 include {
-    compile_model ;
-    run_hostrep_treeppl
-} from "./modules/treeppl"
-
-include {
-    run_hostrep_revbayes
-} from "./modules/revbayes"
-
-include {
     compile_interactions_tppl ;
     run_interactions_tppl ;
     add_params_phyjson ;
@@ -35,6 +26,16 @@ include {
 include {
     add_interactions_to_phyjson
 } from "./modules/interactions_helpers"
+
+include {
+    compile_model ;
+    run_hostrep_treeppl
+} from "./modules/treeppl"
+
+include {
+    run_hostrep_revbayes
+} from "./modules/revbayes"
+
 
 workflow {
     // Define the simulations
@@ -79,6 +80,7 @@ workflow {
         genid = empirical_trees_ch.map { tid, hpath, spath -> tid }
     }
     else {
+        // Generate a channel of ids to be used as seeds and ids for the trees
         genid = Channel.of((1..params.ngens))
         // Generate host and symbiont trees from a coalescent model
         generate_trees(
