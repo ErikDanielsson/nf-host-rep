@@ -1,5 +1,0 @@
-rb_emul	rejection_full	-m mcmc-lightweight --align --cps full --kernel --sampling-period 10 --incremental-printing
-rb_emul	original	-m mcmc-lightweight --align --cps full --kernel --sampling-period 10 --incremental-printing
-independence	rejection_full	-m mcmc-lightweight --align --cps full --kernel --sampling-period 10 --incremental-printing
-independence	original	-m mcmc-lightweight --align --cps full --kernel --sampling-period 10 --incremental-printing
-

@@ -1,2 +1,0 @@
-subroot-rb-emul	reject-accept	-m mcmc-lightweight --align --cps partial --kernel --incremental-printing 
-rb-emul	reject-accept	-m mcmc-lightweight --align --cps partial --kernel --incremental-printing 
